@@ -7,247 +7,79 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&family=Zen+Kaku+Gothic+New:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-
-/* ── Design tokens: 「紙印」— cool paper-mill palette ── */
 :root{
-  --paper:      #F4F6F8;
-  --paper-deep: #EBEFF2;
-  --white:      #FFFFFF;
-  --ink:        #1B2430;
-  --ink2:       #56626F;
-  --ink3:       #94A0AC;
-  --line:       #DDE3E8;
-  --line2:      #C9D1D8;
-  --teal:       #1D6E6B;
-  --teal-deep:  #14504E;
-  --teal-tint:  #E4F1F0;
-  --amber:      #C97A2E;
-  --amber-tint: #FBF0E2;
-  --red:        #C1443A;
-  --red-tint:   #FBEBEA;
-  --r6: 6px; --r10: 10px; --r14: 14px; --r20: 20px;
-  --shadow-sm: 0 1px 2px rgba(27,36,48,.06);
-  --shadow-md: 0 4px 16px rgba(27,36,48,.08);
+  --paper:#F4F6F8;--paper-deep:#EBEFF2;--white:#FFFFFF;--ink:#1B2430;--ink2:#56626F;--ink3:#94A0AC;
+  --line:#DDE3E8;--line2:#C9D1D8;--teal:#1D6E6B;--teal-deep:#14504E;--teal-tint:#E4F1F0;
+  --amber:#C97A2E;--amber-tint:#FBF0E2;--red:#C1443A;--red-tint:#FBEBEA;
+  --r6:6px;--r10:10px;--r14:14px;--r20:20px;--shadow-sm:0 1px 2px rgba(27,36,48,.06);--shadow-md:0 4px 16px rgba(27,36,48,.08);
 }
-
 html{scroll-behavior:smooth}
-body{
-  font-family:'Noto Sans TC',sans-serif;
-  background:var(--paper);
-  color:var(--ink);
-  min-height:100vh;
-  padding-bottom:64px;
-  -webkit-font-smoothing:antialiased;
-  background-image:
-    radial-gradient(circle at 15% 8%, rgba(29,110,107,.04) 0%, transparent 45%),
-    radial-gradient(circle at 85% 92%, rgba(201,122,46,.04) 0%, transparent 45%);
-}
-
-/* ── Header: printer's mark ── */
-.site-header{
-  background:var(--white);
-  border-bottom:1px solid var(--line);
-  padding:0 20px;
-  position:sticky; top:0; z-index:100;
-}
-.header-inner{
-  max-width:640px; margin:0 auto; height:64px;
-  display:flex; align-items:center; gap:14px;
-}
-.press-mark{
-  width:38px; height:38px; flex-shrink:0;
-  border-radius:var(--r10);
-  background:var(--teal);
-  display:flex; align-items:center; justify-content:center;
-  position:relative;
-}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;padding-bottom:64px;-webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(circle at 15% 8%, rgba(29,110,107,.04) 0%, transparent 45%),radial-gradient(circle at 85% 92%, rgba(201,122,46,.04) 0%, transparent 45%)}
+.site-header{background:var(--white);border-bottom:1px solid var(--line);padding:0 20px;position:sticky;top:0;z-index:100}
+.header-inner{max-width:640px;margin:0 auto;height:64px;display:flex;align-items:center;gap:14px}
+.press-mark{width:38px;height:38px;flex-shrink:0;border-radius:var(--r10);background:var(--teal);display:flex;align-items:center;justify-content:center}
 .press-mark svg{width:20px;height:20px}
-.header-text{display:flex; flex-direction:column; gap:1px}
-.header-title{
-  font-family:'Zen Kaku Gothic New',sans-serif;
-  font-size:16px; font-weight:700; letter-spacing:.01em; color:var(--ink);
-}
-.header-sub{font-size:11px; color:var(--ink3); letter-spacing:.02em}
-.header-tag{
-  margin-left:auto; font-family:'JetBrains Mono',monospace;
-  font-size:10px; color:var(--teal); background:var(--teal-tint);
-  padding:4px 9px; border-radius:20px; letter-spacing:.03em; font-weight:500;
-}
-
-.main{max-width:640px; margin:0 auto; padding:28px 16px 0}
-
-/* ── Intro strip ── */
-.intro{padding:2px 4px 22px; text-align:center}
-.intro h1{
-  font-family:'Zen Kaku Gothic New',sans-serif;
-  font-size:21px; font-weight:700; color:var(--ink); margin-bottom:6px; letter-spacing:.01em;
-}
-.intro p{font-size:12.5px; color:var(--ink2); line-height:1.6}
-
-/* ── Section card ── */
-.section{
-  background:var(--white);
-  border:1px solid var(--line);
-  border-radius:var(--r20);
-  overflow:hidden;
-  margin-bottom:14px;
-  box-shadow:var(--shadow-sm);
-  transition:box-shadow .2s;
-}
+.header-text{display:flex;flex-direction:column;gap:1px}
+.header-title{font-family:'Zen Kaku Gothic New',sans-serif;font-size:16px;font-weight:700;letter-spacing:.01em;color:var(--ink)}
+.header-sub{font-size:11px;color:var(--ink3);letter-spacing:.02em}
+.header-tag{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--teal);background:var(--teal-tint);padding:4px 9px;border-radius:20px;letter-spacing:.03em;font-weight:500}
+.main{max-width:640px;margin:0 auto;padding:28px 16px 0}
+.intro{padding:2px 4px 22px;text-align:center}
+.intro h1{font-family:'Zen Kaku Gothic New',sans-serif;font-size:21px;font-weight:700;color:var(--ink);margin-bottom:6px;letter-spacing:.01em}
+.intro p{font-size:12.5px;color:var(--ink2);line-height:1.6}
+.section{background:var(--white);border:1px solid var(--line);border-radius:var(--r20);overflow:hidden;margin-bottom:14px;box-shadow:var(--shadow-sm);transition:box-shadow .2s}
 .section:hover{box-shadow:var(--shadow-md)}
-.section-head{
-  padding:16px 22px 14px;
-  border-bottom:1px solid var(--line);
-  display:flex; align-items:center; gap:11px;
-  background:linear-gradient(180deg, rgba(29,110,107,.02), transparent);
-}
-.section-badge{
-  width:26px; height:26px; border-radius:8px;
-  background:var(--teal-tint); color:var(--teal-deep);
-  display:flex; align-items:center; justify-content:center;
-  font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600;
-  flex-shrink:0;
-}
-.section-title{
-  font-family:'Zen Kaku Gothic New',sans-serif;
-  font-size:14px; font-weight:700; color:var(--ink); letter-spacing:.01em;
-}
-.section-hint{margin-left:auto; font-size:10.5px; color:var(--ink3)}
+.section-head{padding:16px 22px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:11px;background:linear-gradient(180deg, rgba(29,110,107,.02), transparent)}
+.section-badge{width:26px;height:26px;border-radius:8px;background:var(--teal-tint);color:var(--teal-deep);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;flex-shrink:0}
+.section-title{font-family:'Zen Kaku Gothic New',sans-serif;font-size:14px;font-weight:700;color:var(--ink);letter-spacing:.01em}
+.section-hint{margin-left:auto;font-size:10.5px;color:var(--ink3)}
 .section-body{padding:20px 22px}
-
-/* ── Fields ── */
 .field{margin-bottom:15px}
 .field:last-child{margin-bottom:0}
-label{
-  display:block; font-size:11.5px; font-weight:600; color:var(--ink2);
-  margin-bottom:6px; letter-spacing:.01em;
-}
-.req{color:var(--red); margin-left:2px}
-
-input[type=text],input[type=date],input[type=number],select,textarea{
-  width:100%; padding:10px 13px; font-size:14px; font-family:'Noto Sans TC',sans-serif;
-  color:var(--ink); background:var(--paper); border:1.5px solid var(--line2);
-  border-radius:var(--r10); outline:none; appearance:none;
-  transition:border-color .15s, box-shadow .15s, background .15s;
-}
-input:focus,select:focus,textarea:focus{
-  border-color:var(--teal); background:var(--white);
-  box-shadow:0 0 0 3.5px rgba(29,110,107,.1);
-}
+label{display:block;font-size:11.5px;font-weight:600;color:var(--ink2);margin-bottom:6px;letter-spacing:.01em}
+.req{color:var(--red);margin-left:2px}
+.optional{color:var(--ink3);font-weight:400;font-size:10.5px}
+input[type=text],input[type=email],input[type=date],input[type=number],select,textarea{width:100%;padding:10px 13px;font-size:14px;font-family:'Noto Sans TC',sans-serif;color:var(--ink);background:var(--paper);border:1.5px solid var(--line2);border-radius:var(--r10);outline:none;appearance:none;transition:border-color .15s, box-shadow .15s, background .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--teal);background:var(--white);box-shadow:0 0 0 3.5px rgba(29,110,107,.1)}
 input::placeholder,textarea::placeholder{color:var(--ink3)}
-select{
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='9' fill='none'%3E%3Cpath d='M1 1.5l5.5 5.5 5.5-5.5' stroke='%2394A0AC' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  background-repeat:no-repeat; background-position:right 13px center; padding-right:38px; cursor:pointer;
-}
-textarea{resize:vertical; min-height:76px; line-height:1.6}
-.grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px}
-
-/* ── Item cards ── */
-.items-list{display:flex; flex-direction:column; gap:12px; margin-bottom:12px}
-.item-card{
-  border:1.5px solid var(--line); border-radius:var(--r14);
-  overflow:hidden; background:var(--white); transition:border-color .15s;
-}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='9' fill='none'%3E%3Cpath d='M1 1.5l5.5 5.5 5.5-5.5' stroke='%2394A0AC' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;padding-right:38px;cursor:pointer}
+textarea{resize:vertical;min-height:76px;line-height:1.6}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.items-list{display:flex;flex-direction:column;gap:12px;margin-bottom:12px}
+.item-card{border:1.5px solid var(--line);border-radius:var(--r14);overflow:hidden;background:var(--white);transition:border-color .15s}
 .item-card:focus-within{border-color:var(--teal)}
-.item-header{
-  padding:11px 16px; background:var(--paper-deep);
-  border-bottom:1px solid var(--line);
-  display:flex; align-items:center; justify-content:space-between;
-}
-.item-num{
-  font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--teal-deep);
-  font-weight:600; letter-spacing:.02em; display:flex; align-items:center; gap:6px;
-}
+.item-header{padding:11px 16px;background:var(--paper-deep);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+.item-num{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--teal-deep);font-weight:600;letter-spacing:.02em;display:flex;align-items:center;gap:6px}
 .item-num::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--amber)}
-.item-del{
-  width:25px; height:25px; border:1px solid var(--line2); border-radius:7px;
-  background:var(--white); color:var(--ink3); font-size:14px; cursor:pointer;
-  display:flex; align-items:center; justify-content:center; transition:all .15s;
-}
-.item-del:hover{background:var(--red-tint); border-color:var(--red); color:var(--red)}
+.item-del{width:25px;height:25px;border:1px solid var(--line2);border-radius:7px;background:var(--white);color:var(--ink3);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.item-del:hover{background:var(--red-tint);border-color:var(--red);color:var(--red)}
 .item-body{padding:16px}
-
-.price-chip{
-  display:none; margin-top:12px; padding:11px 14px;
-  background:var(--teal-tint); border:1px solid rgba(29,110,107,.18); border-radius:var(--r10);
-  font-size:12px; color:var(--teal-deep); align-items:center; gap:9px;
-}
-.price-chip.show{display:flex}
-.price-chip .amount{font-family:'JetBrains Mono',monospace; font-size:16px; font-weight:600; color:var(--teal-deep)}
-.price-chip .detail{color:var(--teal); font-size:10.5px}
-
-.file-drop{
-  border:1.5px dashed var(--line2); border-radius:var(--r10); padding:15px;
-  text-align:center; cursor:pointer; transition:all .15s; font-size:12px; color:var(--ink3);
-  background:var(--paper);
-}
-.file-drop:hover{border-color:var(--teal); background:var(--teal-tint); color:var(--teal-deep)}
-.file-drop.has-file{border-color:var(--teal); background:var(--teal-tint); color:var(--teal-deep); border-style:solid; font-weight:500}
+.file-drop{border:1.5px dashed var(--line2);border-radius:var(--r10);padding:15px;text-align:center;cursor:pointer;transition:all .15s;font-size:12px;color:var(--ink3);background:var(--paper)}
+.file-drop:hover{border-color:var(--teal);background:var(--teal-tint);color:var(--teal-deep)}
+.file-drop.has-file{border-color:var(--teal);background:var(--teal-tint);color:var(--teal-deep);border-style:solid;font-weight:500}
 .file-input{display:none}
-
-.add-item-btn{
-  width:100%; padding:13px; background:var(--white);
-  border:1.5px dashed var(--line2); border-radius:var(--r14);
-  color:var(--ink2); font-size:13px; font-weight:500; cursor:pointer;
-  display:flex; align-items:center; justify-content:center; gap:7px;
-  transition:all .15s;
-}
-.add-item-btn:hover{border-color:var(--teal); color:var(--teal-deep); background:var(--teal-tint)}
-
-/* ── Submit ── */
+.add-item-btn{width:100%;padding:13px;background:var(--white);border:1.5px dashed var(--line2);border-radius:var(--r14);color:var(--ink2);font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .15s}
+.add-item-btn:hover{border-color:var(--teal);color:var(--teal-deep);background:var(--teal-tint)}
 .submit-wrap{margin-top:18px}
-.submit-btn{
-  width:100%; padding:16px; background:var(--teal); color:#fff; border:none;
-  border-radius:var(--r14); font-size:15.5px; font-weight:700;
-  font-family:'Zen Kaku Gothic New',sans-serif; letter-spacing:.02em;
-  cursor:pointer; box-shadow:0 4px 14px rgba(29,110,107,.28);
-  transition:background .15s, transform .1s, box-shadow .15s;
-}
-.submit-btn:hover{background:var(--teal-deep); transform:translateY(-1px); box-shadow:0 6px 20px rgba(29,110,107,.34)}
+.submit-btn{width:100%;padding:16px;background:var(--teal);color:#fff;border:none;border-radius:var(--r14);font-size:15.5px;font-weight:700;font-family:'Zen Kaku Gothic New',sans-serif;letter-spacing:.02em;cursor:pointer;box-shadow:0 4px 14px rgba(29,110,107,.28);transition:background .15s, transform .1s, box-shadow .15s}
+.submit-btn:hover{background:var(--teal-deep);transform:translateY(-1px);box-shadow:0 6px 20px rgba(29,110,107,.34)}
 .submit-btn:active{transform:translateY(0)}
-.submit-btn:disabled{background:var(--ink3); cursor:not-allowed; transform:none; box-shadow:none}
-.submit-note{text-align:center; font-size:11px; color:var(--ink3); margin-top:10px; line-height:1.6}
-
-.spin{
-  display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,.35);
-  border-top-color:#fff; border-radius:50%; animation:rotate .6s linear infinite;
-  vertical-align:middle; margin-right:7px;
-}
+.submit-btn:disabled{background:var(--ink3);cursor:not-allowed;transform:none;box-shadow:none}
+.submit-note{text-align:center;font-size:11px;color:var(--ink3);margin-top:10px;line-height:1.6}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:rotate .6s linear infinite;vertical-align:middle;margin-right:7px}
 @keyframes rotate{to{transform:rotate(360deg)}}
-
-/* ── Success ── */
-#success-screen{display:none; text-align:center; padding:70px 20px 40px}
-.success-mark{
-  width:76px; height:76px; margin:0 auto 22px; border-radius:50%;
-  background:var(--teal-tint); border:2px solid rgba(29,110,107,.25);
-  display:flex; align-items:center; justify-content:center;
-}
+#success-screen{display:none;text-align:center;padding:70px 20px 40px}
+.success-mark{width:76px;height:76px;margin:0 auto 22px;border-radius:50%;background:var(--teal-tint);border:2px solid rgba(29,110,107,.25);display:flex;align-items:center;justify-content:center}
 .success-mark svg{width:32px;height:32px}
-#success-screen h2{
-  font-family:'Zen Kaku Gothic New',sans-serif; font-size:23px; font-weight:700;
-  margin-bottom:9px; color:var(--ink);
-}
-#success-screen p{font-size:14px; color:var(--ink2); line-height:1.7}
-.order-ref{
-  display:inline-block; margin:20px auto 0; padding:9px 18px;
-  background:var(--paper-deep); border:1px solid var(--line); border-radius:var(--r10);
-  font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--ink2);
-}
-.reset-btn{
-  margin-top:26px; padding:11px 26px; background:var(--ink); color:#fff; border:none;
-  border-radius:var(--r10); font-size:13px; cursor:pointer; font-weight:500; transition:opacity .15s;
-}
+#success-screen h2{font-family:'Zen Kaku Gothic New',sans-serif;font-size:23px;font-weight:700;margin-bottom:9px;color:var(--ink)}
+#success-screen p{font-size:14px;color:var(--ink2);line-height:1.7}
+.order-ref{display:inline-block;margin:20px auto 0;padding:9px 18px;background:var(--paper-deep);border:1px solid var(--line);border-radius:var(--r10);font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink2)}
+.reset-btn{margin-top:26px;padding:11px 26px;background:var(--ink);color:#fff;border:none;border-radius:var(--r10);font-size:13px;cursor:pointer;font-weight:500;transition:opacity .15s}
 .reset-btn:hover{opacity:.82}
-
-.field-err{font-size:11px; color:var(--red); margin-top:5px; display:none}
+.field-err{font-size:11px;color:var(--red);margin-top:5px;display:none}
 .field-err.show{display:block}
-
-@media(max-width:520px){
-  .grid2{grid-template-columns:1fr}
-  .section-body{padding:16px}
-  .item-body{padding:14px}
-  .header-inner{height:58px}
-}
+@media(max-width:520px){.grid2{grid-template-columns:1fr}.section-body{padding:16px}.item-body{padding:14px}.header-inner{height:58px}}
 </style>
 </head>
 <body>
@@ -259,9 +91,9 @@ textarea{resize:vertical; min-height:76px; line-height:1.6}
     </div>
     <div class="header-text">
       <span class="header-title">印刷下單系統</span>
-      <span class="header-sub">填單即算價 · 檔案直送印刷廠</span>
+      <span class="header-sub">填單即送出 · 檔案直送印刷廠</span>
     </div>
-    <span class="header-tag">v2.1</span>
+    <span class="header-tag">v2.2</span>
   </div>
 </header>
 
@@ -280,7 +112,7 @@ textarea{resize:vertical; min-height:76px; line-height:1.6}
   <div id="form-wrap">
     <div class="intro">
       <h1>填寫印刷需求</h1>
-      <p>選好教室與老師，逐項填入印刷品項，系統會即時算出金額</p>
+      <p>選好教室與老師，逐項填入印刷品項，送出後印刷廠即會收到通知</p>
     </div>
 
     <form id="order-form" onsubmit="return false">
@@ -323,6 +155,10 @@ textarea{resize:vertical; min-height:76px; line-height:1.6}
               </select>
               <div class="field-err" id="err-teacher">請選擇授課教師</div>
             </div>
+          </div>
+          <div class="field">
+            <label>您的 Email <span class="optional">（選填，填寫後將收到下單確認信）</span></label>
+            <input type="email" id="teacherEmail" placeholder="your@email.com">
           </div>
           <div class="field">
             <label>訂單客戶名 <span class="req">*</span></label>
@@ -387,11 +223,6 @@ const TYPES=[
  {v:'彩色文宣DM-A4',b:0,c:0,f:4.5},{v:'彩色文宣DM-B4',b:0,c:0,f:6.5},
  {v:'叫紙A4（每包$90）',b:0,c:0,f:90},{v:'叫紙B4（每包$135）',b:0,c:0,f:135},{v:'叫紙A3（每包$175）',b:0,c:0,f:175},
 ];
-const RATES={A4:[[50,1.8],[100,1.5],[300,1.3],[1000,1.1],[9e9,0.9]],A3:[[50,2.5],[100,2.3],[300,2.0],[1000,1.85],[9e9,1.65]],B4:[[50,2.2],[100,2.0],[300,1.8],[1000,1.65],[9e9,1.55]],B5:[[50,1.2],[100,1.0],[300,0.9],[1000,0.85],[9e9,0.8]],A5:[[50,1.0],[100,0.8],[9e9,0.75]]};
-function getSize(t){if(t.includes('A3'))return'A3';if(t.includes('B4'))return'B4';if(t.includes('B5'))return'B5';if(t.includes('A5'))return'A5';return'A4'}
-function getSheets(t,p){p=Math.ceil(+p||0);if(['B5單張','彩色','叫紙'].some(k=>t.includes(k)))return p;if(['騎馬釘A3','騎馬釘B4','騎馬釘A4'].some(k=>t.includes(k)))return Math.ceil(p/4);if(['A4單面','B4單面','A3單面'].some(k=>t.includes(k)))return p;return Math.ceil(p/2)}
-function getRate(s,n){for(const[l,r]of(RATES[s]||RATES.A4))if(n<=l)return r;return 0.9}
-function calcPrice(type,pages,qty){pages=+pages||0;qty=+qty||0;if(!type||pages<=0||qty<=0)return null;const info=TYPES.find(x=>x.v===type);if(!info)return null;const sh=getSheets(type,pages);if(info.f!==undefined)return{sheets:sh,rate:info.f,unit:info.f,total:Math.round(info.f*qty)};const size=getSize(type),rate=getRate(size,sh*qty),paper=sh*rate,unit=Math.round((paper+info.b+info.c)*10)/10;return{sheets:sh,rate,unit,total:Math.round(unit*qty)}}
 
 let itemCounter=0;
 const TYPE_OPTIONS=`
@@ -410,12 +241,12 @@ function addItem(){
     <div class="item-header"><span class="item-num">ITEM ${String(id).padStart(2,'0')}</span>
       <button type="button" class="item-del" onclick="delItem(${id})">✕</button></div>
     <div class="item-body">
-      <div class="field"><label>檔案名稱 <span class="req">*</span></label><input type="text" id="name-${id}" placeholder="請輸入檔案名稱" oninput="updatePrice(${id})"></div>
+      <div class="field"><label>檔案名稱 <span class="req">*</span></label><input type="text" id="name-${id}" placeholder="請輸入檔案名稱"></div>
       <div class="field"><label>印刷類型 <span class="req">*</span></label>
-        <select id="type-${id}" onchange="updatePrice(${id})"><option value="">請選擇印刷類型</option>${TYPE_OPTIONS}</select></div>
+        <select id="type-${id}"><option value="">請選擇印刷類型</option>${TYPE_OPTIONS}</select></div>
       <div class="grid2">
-        <div class="field"><label>數量（份） <span class="req">*</span></label><input type="number" id="qty-${id}" min="1" placeholder="0" oninput="updatePrice(${id})"></div>
-        <div class="field"><label>總頁數</label><input type="number" id="pages-${id}" min="1" placeholder="0" oninput="updatePrice(${id})"></div>
+        <div class="field"><label>數量（份） <span class="req">*</span></label><input type="number" id="qty-${id}" min="1" placeholder="0"></div>
+        <div class="field"><label>總頁數</label><input type="number" id="pages-${id}" min="1" placeholder="0"></div>
       </div>
       <div class="grid2">
         <div class="field"><label>封面檔（選填）</label>
@@ -427,7 +258,6 @@ function addItem(){
           <input type="file" class="file-input" id="inner-${id}" onchange="fileSelected(${id},'inner')">
         </div>
       </div>
-      <div class="price-chip" id="price-${id}"></div>
     </div>`;
   document.getElementById('items-list').appendChild(div);
   div.querySelector('#name-'+id).focus();
@@ -438,15 +268,6 @@ function fileSelected(id,kind){
   const drop=document.getElementById(kind+'drop-'+id);
   if(input.files.length){drop.textContent='✓ '+input.files[0].name;drop.classList.add('has-file')}
   else{drop.textContent='📎 點擊上傳'+(kind==='cover'?'封面檔':'內頁檔');drop.classList.remove('has-file')}
-}
-function updatePrice(id){
-  const type=document.getElementById('type-'+id)?.value;
-  const qty=document.getElementById('qty-'+id)?.value;
-  const pages=document.getElementById('pages-'+id)?.value;
-  const chip=document.getElementById('price-'+id);if(!chip)return;
-  const r=calcPrice(type,pages||1,qty);
-  if(r&&r.total>0){chip.innerHTML=`<div><div class="amount">NT$ ${r.total.toLocaleString()}</div><div class="detail">${r.sheets} 張/份 × $${r.unit}/份</div></div>`;chip.classList.add('show')}
-  else chip.classList.remove('show');
 }
 function showErr(id){document.getElementById('err-'+id)?.classList.add('show')}
 function clearErr(id){document.getElementById('err-'+id)?.classList.remove('show')}
@@ -471,6 +292,7 @@ async function submitOrder(){
   const formData=new FormData();
   formData.append('room',document.getElementById('room').value);
   formData.append('teacher',document.getElementById('teacher').value.trim());
+  formData.append('teacherEmail',document.getElementById('teacherEmail').value.trim());
   formData.append('customer',document.getElementById('customer').value.trim());
   formData.append('pickup',document.getElementById('pickup').value);
   formData.append('note',document.getElementById('note').value.trim());
@@ -503,7 +325,7 @@ async function submitOrder(){
     if(data.success){
       document.getElementById('form-wrap').style.display='none';
       document.getElementById('success-screen').style.display='block';
-      document.getElementById('order-ref').textContent='訂單編號：'+data.orderId+'　總額：NT$'+data.grandTotal.toLocaleString();
+      document.getElementById('order-ref').textContent='訂單編號：'+data.orderId;
       window.scrollTo({top:0,behavior:'smooth'});
     }else throw new Error(data.error||'送出失敗');
   }catch(e){
