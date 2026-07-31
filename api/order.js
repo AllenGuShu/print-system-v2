@@ -1,4 +1,4 @@
-// api/order.js — 處理下單：透過 Apps Script Web App 上傳檔案、寫入 Sheet、寄 email
+// api/order.js — 處理下單：透過 Apps Script Web App 上傳檔案（自動建子資料夾）、寫入 Sheet、寄 email
 import { google } from 'googleapis';
 import formidable from 'formidable';
 import fs from 'fs';
@@ -18,15 +18,15 @@ async function getAuth() {
   });
 }
 
-// 透過 Apps Script Web App 上傳檔案（用你自己的 Google 帳號權限，不受服務帳戶容量限制）
-async function uploadViaAppsScript(filePath, fileName, mimeType) {
+// 透過 Apps Script Web App 上傳檔案，並帶入項目名稱以建立對應子資料夾
+async function uploadViaAppsScript(filePath, fileName, mimeType, itemName) {
   const fileBuffer = fs.readFileSync(filePath);
   const base64Data = fileBuffer.toString('base64');
 
   const res = await fetch(APPS_SCRIPT_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ fileName, mimeType, base64Data }),
+    body: JSON.stringify({ fileName, mimeType, base64Data, itemName }),
     redirect: 'follow',
   });
 
@@ -66,32 +66,52 @@ export default async function handler(req, res) {
 
     const orderId = `ORD-${Date.now()}`;
 
-    // 上傳檔案（透過 Apps Script，用你的 Drive 權限）
+    // 每個項目各自處理檔案上傳（用該項目的檔案名稱建子資料夾）
+    // formidable 會把同名欄位的檔案收集成陣列，順序對應每個 item
     const coverFileList = files.coverFiles ? (Array.isArray(files.coverFiles) ? files.coverFiles : [files.coverFiles]) : [];
     const innerFileList = files.innerFiles ? (Array.isArray(files.innerFiles) ? files.innerFiles : [files.innerFiles]) : [];
 
-    const coverLinks = [];
-    for (const f of coverFileList) {
-      const link = await uploadViaAppsScript(f.filepath, `${orderId}_封面_${f.originalFilename}`, f.mimetype);
-      coverLinks.push(link);
-    }
-    const innerLinks = [];
-    for (const f of innerFileList) {
-      const link = await uploadViaAppsScript(f.filepath, `${orderId}_內頁_${f.originalFilename}`, f.mimetype);
-      innerLinks.push(link);
-    }
+    // 因為前端是逐項目 append，若某項目沒有檔案，陣列會缺少對應位置，
+    // 所以改用「itemIndex」欄位對應（見前端修改）
+    const coverIndexRaw = get(fields.coverIndexes); // JSON array of item indexes that have cover files
+    const innerIndexRaw = get(fields.innerIndexes);
+    const coverIndexes = coverIndexRaw ? JSON.parse(coverIndexRaw) : [];
+    const innerIndexes = innerIndexRaw ? JSON.parse(innerIndexRaw) : [];
 
-    // 計算每個項目金額
     let grandTotal = 0;
-    const calculatedItems = items.map(item => {
+    const calculatedItems = [];
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
       const result = calcPrice(item.type, item.pages, item.qty);
       grandTotal += result.total;
-      return { ...item, ...result };
-    });
+
+      const itemCoverLinks = [];
+      const itemInnerLinks = [];
+
+      const coverPos = coverIndexes.indexOf(i);
+      if (coverPos !== -1 && coverFileList[coverPos]) {
+        const f = coverFileList[coverPos];
+        const link = await uploadViaAppsScript(f.filepath, `封面_${f.originalFilename}`, f.mimetype, item.name);
+        itemCoverLinks.push(link);
+      }
+      const innerPos = innerIndexes.indexOf(i);
+      if (innerPos !== -1 && innerFileList[innerPos]) {
+        const f = innerFileList[innerPos];
+        const link = await uploadViaAppsScript(f.filepath, `內頁_${f.originalFilename}`, f.mimetype, item.name);
+        itemInnerLinks.push(link);
+      }
+
+      calculatedItems.push({
+        ...item, ...result,
+        coverLinks: itemCoverLinks,
+        innerLinks: itemInnerLinks,
+      });
+    }
 
     const timestamp = new Date().toISOString();
 
-    // 寫入 Google Sheet（每個項目一行）
+    // 寫入 Google Sheet
     const auth = await getAuth();
     const sheets = google.sheets({ version: 'v4', auth });
 
@@ -99,7 +119,7 @@ export default async function handler(req, res) {
       orderId, timestamp, customer, room, teacher, pickup,
       item.name, item.type, item.qty, item.pages || '',
       item.sheets, item.rate, item.unit, item.total,
-      coverLinks.join(' | '), innerLinks.join(' | '), note,
+      item.coverLinks.join(' | '), item.innerLinks.join(' | '), note,
     ]);
 
     await sheets.spreadsheets.values.append({
@@ -109,10 +129,14 @@ export default async function handler(req, res) {
       requestBody: { values: rows },
     });
 
-    // 寄 email 通知
+    // 寄 email
+    const allCoverLinks = calculatedItems.flatMap(i => i.coverLinks);
+    const allInnerLinks = calculatedItems.flatMap(i => i.innerLinks);
+
     await sendNotificationEmail({
       orderId, timestamp, customer, room, teacher, pickup, note,
-      items: calculatedItems, grandTotal, coverLinks, innerLinks,
+      items: calculatedItems, grandTotal,
+      coverLinks: allCoverLinks, innerLinks: allInnerLinks,
       sheetUrl: `https://docs.google.com/spreadsheets/d/${process.env.GOOGLE_SHEET_ID}`,
     });
 
@@ -127,10 +151,7 @@ export default async function handler(req, res) {
 async function sendNotificationEmail({ orderId, timestamp, customer, room, teacher, pickup, note, items, grandTotal, coverLinks, innerLinks, sheetUrl }) {
   const RESEND_API_KEY = process.env.RESEND_API_KEY;
   const NOTIFY_EMAILS = (process.env.NOTIFY_EMAILS || '').split(',').map(e => e.trim()).filter(Boolean);
-  if (!RESEND_API_KEY || NOTIFY_EMAILS.length === 0) {
-    console.log('Email not configured, skipping notification');
-    return;
-  }
+  if (!RESEND_API_KEY || NOTIFY_EMAILS.length === 0) return;
 
   const itemRows = items.map((it, i) => `
     <tr>
