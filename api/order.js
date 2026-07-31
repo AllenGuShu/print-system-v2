@@ -1,4 +1,4 @@
-// api/order.js — 處理下單：透過 Apps Script Web App 上傳檔案（自動建子資料夾）、寫入 Sheet、寄 email
+// api/order.js — v3: 傳取件日建資料夾、寄email給老師本人、後端仍算價（前端不顯示）
 import { google } from 'googleapis';
 import formidable from 'formidable';
 import fs from 'fs';
@@ -18,15 +18,14 @@ async function getAuth() {
   });
 }
 
-// 透過 Apps Script Web App 上傳檔案，並帶入項目名稱以建立對應子資料夾
-async function uploadViaAppsScript(filePath, fileName, mimeType, itemName) {
+async function uploadViaAppsScript(filePath, fileName, mimeType, itemName, pickup) {
   const fileBuffer = fs.readFileSync(filePath);
   const base64Data = fileBuffer.toString('base64');
 
   const res = await fetch(APPS_SCRIPT_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ fileName, mimeType, base64Data, itemName }),
+    body: JSON.stringify({ fileName, mimeType, base64Data, itemName, pickup }),
     redirect: 'follow',
   });
 
@@ -56,24 +55,21 @@ export default async function handler(req, res) {
     const { fields, files } = await parseForm(req);
     const get = (f) => Array.isArray(f) ? f[0] : f;
 
-    const room     = get(fields.room);
-    const teacher  = get(fields.teacher);
-    const customer = get(fields.customer);
-    const pickup   = get(fields.pickup);
-    const note     = get(fields.note) || '';
-    const itemsRaw = get(fields.items);
+    const room        = get(fields.room);
+    const teacher      = get(fields.teacher);
+    const teacherEmail = get(fields.teacherEmail) || '';
+    const customer     = get(fields.customer);
+    const pickup       = get(fields.pickup);
+    const note         = get(fields.note) || '';
+    const itemsRaw     = get(fields.items);
     const items = JSON.parse(itemsRaw);
 
     const orderId = `ORD-${Date.now()}`;
 
-    // 每個項目各自處理檔案上傳（用該項目的檔案名稱建子資料夾）
-    // formidable 會把同名欄位的檔案收集成陣列，順序對應每個 item
     const coverFileList = files.coverFiles ? (Array.isArray(files.coverFiles) ? files.coverFiles : [files.coverFiles]) : [];
     const innerFileList = files.innerFiles ? (Array.isArray(files.innerFiles) ? files.innerFiles : [files.innerFiles]) : [];
 
-    // 因為前端是逐項目 append，若某項目沒有檔案，陣列會缺少對應位置，
-    // 所以改用「itemIndex」欄位對應（見前端修改）
-    const coverIndexRaw = get(fields.coverIndexes); // JSON array of item indexes that have cover files
+    const coverIndexRaw = get(fields.coverIndexes);
     const innerIndexRaw = get(fields.innerIndexes);
     const coverIndexes = coverIndexRaw ? JSON.parse(coverIndexRaw) : [];
     const innerIndexes = innerIndexRaw ? JSON.parse(innerIndexRaw) : [];
@@ -92,13 +88,13 @@ export default async function handler(req, res) {
       const coverPos = coverIndexes.indexOf(i);
       if (coverPos !== -1 && coverFileList[coverPos]) {
         const f = coverFileList[coverPos];
-        const link = await uploadViaAppsScript(f.filepath, `封面_${f.originalFilename}`, f.mimetype, item.name);
+        const link = await uploadViaAppsScript(f.filepath, `封面_${f.originalFilename}`, f.mimetype, item.name, pickup);
         itemCoverLinks.push(link);
       }
       const innerPos = innerIndexes.indexOf(i);
       if (innerPos !== -1 && innerFileList[innerPos]) {
         const f = innerFileList[innerPos];
-        const link = await uploadViaAppsScript(f.filepath, `內頁_${f.originalFilename}`, f.mimetype, item.name);
+        const link = await uploadViaAppsScript(f.filepath, `內頁_${f.originalFilename}`, f.mimetype, item.name, pickup);
         itemInnerLinks.push(link);
       }
 
@@ -129,18 +125,26 @@ export default async function handler(req, res) {
       requestBody: { values: rows },
     });
 
-    // 寄 email
+    // 寄 email 給你/印刷負責人（含金額）
     const allCoverLinks = calculatedItems.flatMap(i => i.coverLinks);
     const allInnerLinks = calculatedItems.flatMap(i => i.innerLinks);
 
-    await sendNotificationEmail({
+    await sendAdminNotification({
       orderId, timestamp, customer, room, teacher, pickup, note,
       items: calculatedItems, grandTotal,
       coverLinks: allCoverLinks, innerLinks: allInnerLinks,
       sheetUrl: `https://docs.google.com/spreadsheets/d/${process.env.GOOGLE_SHEET_ID}`,
     });
 
-    return res.status(200).json({ success: true, orderId, grandTotal });
+    // 寄 email 給老師本人（不含金額，只是下單確認）
+    if (teacherEmail && teacherEmail.includes('@')) {
+      await sendTeacherConfirmation({
+        orderId, teacherEmail, teacher, room, customer, pickup, note,
+        items: calculatedItems,
+      });
+    }
+
+    return res.status(200).json({ success: true, orderId });
 
   } catch (err) {
     console.error('Order error:', err);
@@ -148,7 +152,8 @@ export default async function handler(req, res) {
   }
 }
 
-async function sendNotificationEmail({ orderId, timestamp, customer, room, teacher, pickup, note, items, grandTotal, coverLinks, innerLinks, sheetUrl }) {
+// ── 寄給你/印刷負責人（含完整金額資訊）──
+async function sendAdminNotification({ orderId, timestamp, customer, room, teacher, pickup, note, items, grandTotal, coverLinks, innerLinks, sheetUrl }) {
   const RESEND_API_KEY = process.env.RESEND_API_KEY;
   const NOTIFY_EMAILS = (process.env.NOTIFY_EMAILS || '').split(',').map(e => e.trim()).filter(Boolean);
   if (!RESEND_API_KEY || NOTIFY_EMAILS.length === 0) return;
@@ -190,14 +195,56 @@ async function sendNotificationEmail({ orderId, timestamp, customer, room, teach
 
   await fetch('https://api.resend.com/emails', {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${RESEND_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       from: 'onboarding@resend.dev',
       to: NOTIFY_EMAILS,
       subject: `【印刷新訂單】${room} — ${teacher}  NT$${grandTotal.toLocaleString()}`,
+      html,
+    }),
+  });
+}
+
+// ── 寄給老師本人（不含金額，純確認下單內容）──
+async function sendTeacherConfirmation({ orderId, teacherEmail, teacher, room, customer, pickup, note, items }) {
+  const RESEND_API_KEY = process.env.RESEND_API_KEY;
+  if (!RESEND_API_KEY) return;
+
+  const itemRows = items.map((it, i) => `
+    <tr>
+      <td style="padding:6px 8px;border-bottom:1px solid #eee">${i+1}</td>
+      <td style="padding:6px 8px;border-bottom:1px solid #eee">${it.name}</td>
+      <td style="padding:6px 8px;border-bottom:1px solid #eee;font-size:11px">${it.type}</td>
+      <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right">${it.qty} 份</td>
+      <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right">${it.pages||'—'} 頁</td>
+    </tr>`).join('');
+
+  const html = `
+  <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+    <div style="background:#1D6E6B;padding:18px 24px;border-radius:12px 12px 0 0">
+      <p style="color:#fff;font-size:15px;font-weight:700;margin:0">✓ 印刷訂單已送出</p>
+      <p style="color:rgba(255,255,255,.7);font-size:11px;margin:3px 0 0">${orderId}</p>
+    </div>
+    <div style="padding:20px 24px;border:1px solid #eee;border-top:none">
+      <p style="color:#333;font-size:14px;margin-bottom:14px">${teacher} 您好，您的印刷訂單已成功送出，印刷廠已收到以下項目：</p>
+      <p><b>教室：</b>${room}　<b>客戶名：</b>${customer}</p>
+      <p><b>取件時間：</b>${pickup}</p>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:12px">
+        <thead><tr style="background:#f5f5f5"><th style="padding:6px 8px;text-align:left">#</th><th style="padding:6px 8px;text-align:left">檔名</th><th style="padding:6px 8px;text-align:left">類型</th><th style="padding:6px 8px">數量</th><th style="padding:6px 8px">頁數</th></tr></thead>
+        <tbody>${itemRows}</tbody>
+      </table>
+      ${note ? `<p style="margin-top:14px;color:#666;font-size:12px">備註：${note}</p>` : ''}
+      <p style="margin-top:18px;color:#999;font-size:11px">如需修改或有任何問題，請直接聯繫印刷廠</p>
+    </div>
+  </div>`;
+
+  await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      from: 'onboarding@resend.dev',
+      to: [teacherEmail],
+      subject: `【下單確認】您的印刷訂單已送出 — ${room}`,
       html,
     }),
   });
