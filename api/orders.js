@@ -24,7 +24,7 @@ export default async function handler(req, res) {
     const sheets = google.sheets({ version: 'v4', auth });
     const resp   = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: '訂單記錄!A:Q',
+      range: '訂單記錄!A:R',
     });
 
     const rows = (resp.data.values || []).filter(r => r[0] && r[0] !== '訂單編號');
@@ -33,22 +33,25 @@ export default async function handler(req, res) {
     rows.forEach(r => {
       const [orderId, timestamp, customer, teacher, room, pickup,
              itemName, itemType, itemQty, itemPages, sheetsN, rate, unit, total,
-             coverLinks, innerLinks, note] = r;
+             coverLinks, innerLinks, note, needsReview] = r;
       if (!orderMap.has(orderId)) {
         orderMap.set(orderId, {
           orderId, timestamp, customer, room, teacher, pickup, note,
           coverLinks: coverLinks ? coverLinks.split(' | ') : [],
           innerLinks: innerLinks ? innerLinks.split(' | ') : [],
-          grandTotal: 0, items: [],
+          grandTotal: 0, items: [], hasReviewNeeded: false,
         });
       }
       const order = orderMap.get(orderId);
       const t = Number(total) || 0;
       order.grandTotal += t;
+      const flagged = !!(needsReview && needsReview.trim());
+      if (flagged) order.hasReviewNeeded = true;
       order.items.push({
         name: itemName, type: itemType,
         qty: Number(itemQty) || 0, pages: Number(itemPages) || 0,
         unit: Number(unit) || 0, total: t,
+        needsReview: flagged, reviewReason: needsReview || '',
       });
     });
 
