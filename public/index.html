@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>印刷下單系統</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--paper:#FAF8F3;--white:#fff;--ink:#18181A;--ink2:#52525B;--ink3:#A1A1AA;--line:#E4E4E7;--line2:#D4D4D8;--blue:#2563EB;--blue2:#1D4ED8;--blue-l:#EFF6FF;--green:#16A34A;--green-l:#F0FDF4;--red:#DC2626;--red-l:#FEF2F2;--r8:8px;--r12:12px;--r16:16px;--shadow:0 1px 3px rgba(0,0,0,.08)}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;padding-bottom:60px}
+.site-header{background:var(--ink);color:#fff;padding:0 20px;position:sticky;top:0;z-index:100}
+.header-inner{max-width:700px;margin:0 auto;height:56px;display:flex;align-items:center;gap:12px}
+.header-icon{width:32px;height:32px;background:rgba(255,255,255,.1);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.header-title{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600}
+.header-sub{font-size:11px;color:rgba(255,255,255,.4);margin-left:auto}
+.main{max-width:700px;margin:0 auto;padding:20px 16px 0}
+.section{background:#fff;border:1px solid var(--line);border-radius:var(--r16);overflow:hidden;margin-bottom:12px;box-shadow:var(--shadow)}
+.section-head{padding:14px 20px 12px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+.section-icon{width:28px;height:28px;background:var(--blue-l);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.section-title{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600}
+.section-body{padding:18px 20px}
+.field{margin-bottom:14px}
+.field:last-child{margin-bottom:0}
+label{display:block;font-size:12px;font-weight:500;color:var(--ink2);margin-bottom:5px}
+.req{color:var(--red);margin-left:1px}
+input[type=text],input[type=date],input[type=number],select,textarea{width:100%;padding:9px 12px;font-size:14px;font-family:inherit;color:var(--ink);background:#fff;border:1.5px solid var(--line2);border-radius:8px;outline:none;appearance:none}
+input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' fill='none'%3E%3Cpath d='M1 1.5l6 6 6-6' stroke='%2371717A' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px;cursor:pointer}
+textarea{resize:vertical;min-height:72px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.items-list{display:flex;flex-direction:column;gap:10px;margin-bottom:10px}
+.item-card{border:1.5px solid var(--line);border-radius:var(--r12);overflow:hidden;background:#fff}
+.item-card:focus-within{border-color:var(--blue)}
+.item-header{padding:10px 14px 9px;background:#FAFAFA;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+.item-num{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink3);font-weight:500}
+.item-del{width:24px;height:24px;border:1px solid var(--line2);border-radius:4px;background:#fff;color:var(--ink3);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.item-del:hover{background:var(--red-l);border-color:var(--red);color:var(--red)}
+.item-body{padding:14px}
+.price-chip{display:none;margin-top:10px;padding:9px 12px;background:var(--green-l);border:1px solid #BBF7D0;border-radius:8px;font-size:12px;color:var(--green)}
+.price-chip.show{display:block}
+.price-chip .amount{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:500}
+.file-drop{border:1.5px dashed var(--line2);border-radius:8px;padding:14px;text-align:center;cursor:pointer;transition:all .15s;font-size:12px;color:var(--ink3)}
+.file-drop:hover{border-color:var(--blue);background:var(--blue-l);color:var(--blue)}
+.file-drop.has-file{border-color:var(--green);background:var(--green-l);color:var(--green)}
+.file-input{display:none}
+.add-item-btn{width:100%;padding:11px;background:none;border:1.5px dashed var(--line2);border-radius:var(--r12);color:var(--ink3);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.add-item-btn:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-l)}
+.submit-wrap{margin-top:14px}
+.submit-btn{width:100%;padding:14px;background:var(--blue);color:#fff;border:none;border-radius:var(--r12);font-size:15px;font-weight:700;font-family:'Space Grotesk',sans-serif;cursor:pointer;box-shadow:0 2px 8px rgba(37,99,235,.25)}
+.submit-btn:hover{background:var(--blue2)}
+.submit-btn:disabled{background:var(--ink3);cursor:not-allowed}
+.submit-note{text-align:center;font-size:11px;color:var(--ink3);margin-top:8px}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:rotate .6s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes rotate{to{transform:rotate(360deg)}}
+#success-screen{display:none;text-align:center;padding:64px 20px 40px}
+.success-icon{width:72px;height:72px;background:var(--green-l);border:2px solid #BBF7D0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 20px}
+.order-ref{display:inline-block;margin:18px auto 0;padding:8px 16px;background:#F4F4F5;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12px}
+.reset-btn{margin-top:24px;padding:10px 24px;background:var(--ink);color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer}
+.field-err{font-size:11px;color:var(--red);margin-top:4px;display:none}
+.field-err.show{display:block}
+@media(max-width:500px){.grid2{grid-template-columns:1fr}.section-body{padding:14px}.item-body{padding:12px}}
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-icon">🖨️</div>
+    <span class="header-title">印刷下單系統</span>
+    <span class="header-sub">v2.0 含檔案上傳</span>
+  </div>
+</header>
+
+<main class="main">
+  <div id="success-screen">
+    <div class="success-icon">✓</div>
+    <h2 style="font-family:'Space Grotesk',sans-serif;font-size:22px;margin-bottom:8px">訂單已送出！</h2>
+    <p style="color:var(--ink2);font-size:14px">感謝您的下單，印刷廠已收到您的訂單與檔案</p>
+    <div class="order-ref" id="order-ref">--</div><br>
+    <button class="reset-btn" onclick="location.reload()">再下一筆訂單</button>
+  </div>
+
+  <form id="order-form" onsubmit="return false">
+    <div class="section">
+      <div class="section-head"><div class="section-icon">👤</div><span class="section-title">基本資料</span></div>
+      <div class="section-body">
+        <div class="grid2">
+          <div class="field">
+            <label>上課教室 <span class="req">*</span></label>
+            <select id="room"><option value="">請選擇教室</option>
+              <option>大里許豪教室</option><option>大里育豪教室</option>
+              <option>苑裡勁學教室</option><option>員林教室</option><option>其他教室（備註）</option>
+            </select>
+            <div class="field-err" id="err-room">請選擇教室</div>
+          </div>
+          <div class="field">
+            <label>授課教師 <span class="req">*</span></label>
+            <input type="text" id="teacher" placeholder="老師姓名">
+            <div class="field-err" id="err-teacher">請填寫授課教師</div>
+          </div>
+        </div>
+        <div class="field">
+          <label>訂單客戶名 <span class="req">*</span></label>
+          <input type="text" id="customer" placeholder="姓名或班級簡稱">
+          <div class="field-err" id="err-customer">請填寫客戶名</div>
+        </div>
+        <div class="field">
+          <label>取件時間 <span class="req">*</span></label>
+          <input type="date" id="pickup">
+          <div class="field-err" id="err-pickup">請選擇取件時間</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><div class="section-icon">📄</div><span class="section-title">印刷項目</span>
+        <span style="margin-left:auto;font-size:11px;color:var(--ink3)">可新增多筆</span></div>
+      <div class="section-body">
+        <div class="items-list" id="items-list"></div>
+        <button type="button" class="add-item-btn" onclick="addItem()"><span style="font-size:16px">＋</span> 新增印刷項目</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><div class="section-icon">💬</div><span class="section-title">備註</span></div>
+      <div class="section-body"><textarea id="note" placeholder="急件說明、特殊需求等…"></textarea></div>
+    </div>
+
+    <div class="submit-wrap">
+      <button type="button" class="submit-btn" id="submit-btn" onclick="submitOrder()">確認送出訂單</button>
+      <p class="submit-note">送出時會上傳檔案，請耐心等候，勿重複點擊</p>
+    </div>
+  </form>
+</main>
+
+<script>
+const TYPES=[
+ {v:'膠裝A4（上字封面）',b:16,c:6.5},{v:'膠裝A4（牛皮紙封面）',b:16,c:6.5},
+ {v:'膠裝A4（自備無上字）',b:16,c:4.5},{v:'膠裝A4（許豪自備封面）',b:16,c:3.0},
+ {v:'膠裝A4（許錡加工封面）',b:16,c:4.5},{v:'騎馬釘A3（牛皮紙封面）',b:0,c:8.0},
+ {v:'騎馬釘A3（上字封面）',b:0,c:8.5},{v:'騎馬釘A3（無封面）',b:3,c:0},
+ {v:'騎馬釘A3（許錡自備封面）',b:0,c:8.5},{v:'騎馬釘B4（牛皮紙封面）',b:0,c:6.5},
+ {v:'騎馬釘B4（上字封面）',b:0,c:6.5},{v:'騎馬釘B4（無封面）',b:6.5,c:0},
+ {v:'騎馬釘A4（牛皮紙封面）',b:0,c:5.0},{v:'騎馬釘A4（上字封面）',b:0,c:5.0},{v:'騎馬釘A4（無封面）',b:3,c:0},
+ {v:'A4左側兩釘（無封面）',b:3,c:0},{v:'A3左側兩釘（無封面）',b:3,c:0},{v:'B4左側兩釘（無封面）',b:3,c:0},
+ {v:'B5單張/頭條/每週一翻',b:0,c:0,f:2.5},{v:'A5單張（無封面）',b:0,c:0},
+ {v:'A4單面（無封面）',b:0,c:0},{v:'B4單面（無封面）',b:0,c:0},{v:'A3單面（無封面）',b:0,c:0},
+ {v:'A4雙面（無裝訂）',b:0,c:0},{v:'B4雙面（無裝訂）',b:0,c:0},{v:'A3雙面（無裝訂）',b:0,c:0},
+ {v:'彩色印刷A4單面',b:0,c:0,f:4},{v:'A5單面彩色頭條新聞',b:0,c:0,f:1.25},
+ {v:'彩色文宣DM-A4',b:0,c:0,f:4.5},{v:'彩色文宣DM-B4',b:0,c:0,f:6.5},
+ {v:'叫紙A4（每包$90）',b:0,c:0,f:90},{v:'叫紙B4（每包$135）',b:0,c:0,f:135},{v:'叫紙A3（每包$175）',b:0,c:0,f:175},
+];
+const RATES={A4:[[50,1.8],[100,1.5],[300,1.3],[1000,1.1],[9e9,0.9]],A3:[[50,2.5],[100,2.3],[300,2.0],[1000,1.85],[9e9,1.65]],B4:[[50,2.2],[100,2.0],[300,1.8],[1000,1.65],[9e9,1.55]],B5:[[50,1.2],[100,1.0],[300,0.9],[1000,0.85],[9e9,0.8]],A5:[[50,1.0],[100,0.8],[9e9,0.75]]};
+function getSize(t){if(t.includes('A3'))return'A3';if(t.includes('B4'))return'B4';if(t.includes('B5'))return'B5';if(t.includes('A5'))return'A5';return'A4'}
+function getSheets(t,p){p=Math.ceil(+p||0);if(['B5單張','彩色','叫紙'].some(k=>t.includes(k)))return p;if(['騎馬釘A3','騎馬釘B4','騎馬釘A4'].some(k=>t.includes(k)))return Math.ceil(p/4);if(['A4單面','B4單面','A3單面'].some(k=>t.includes(k)))return p;return Math.ceil(p/2)}
+function getRate(s,n){for(const[l,r]of(RATES[s]||RATES.A4))if(n<=l)return r;return 0.9}
+function calcPrice(type,pages,qty){pages=+pages||0;qty=+qty||0;if(!type||pages<=0||qty<=0)return null;const info=TYPES.find(x=>x.v===type);if(!info)return null;const sh=getSheets(type,pages);if(info.f!==undefined)return{sheets:sh,rate:info.f,unit:info.f,total:Math.round(info.f*qty)};const size=getSize(type),rate=getRate(size,sh*qty),paper=sh*rate,unit=Math.round((paper+info.b+info.c)*10)/10;return{sheets:sh,rate,unit,total:Math.round(unit*qty)}}
+
+let itemCounter=0;
+const TYPE_OPTIONS=`
+<optgroup label="── 膠裝系列 ──"><option>膠裝A4（上字封面）</option><option>膠裝A4（牛皮紙封面）</option><option>膠裝A4（自備無上字）</option><option>膠裝A4（許豪自備封面）</option><option>膠裝A4（許錡加工封面）</option></optgroup>
+<optgroup label="── 騎馬釘A3 ──"><option>騎馬釘A3（牛皮紙封面）</option><option>騎馬釘A3（上字封面）</option><option>騎馬釘A3（無封面）</option><option>騎馬釘A3（許錡自備封面）</option></optgroup>
+<optgroup label="── 騎馬釘B4 ──"><option>騎馬釘B4（牛皮紙封面）</option><option>騎馬釘B4（上字封面）</option><option>騎馬釘B4（無封面）</option></optgroup>
+<optgroup label="── 騎馬釘A4 ──"><option>騎馬釘A4（牛皮紙封面）</option><option>騎馬釘A4（上字封面）</option><option>騎馬釘A4（無封面）</option></optgroup>
+<optgroup label="── 左側兩釘 ──"><option>A4左側兩釘（無封面）</option><option>A3左側兩釘（無封面）</option><option>B4左側兩釘（無封面）</option></optgroup>
+<optgroup label="── 單張/雙面 ──"><option>B5單張/頭條/每週一翻</option><option>A5單張（無封面）</option><option>A4單面（無封面）</option><option>B4單面（無封面）</option><option>A3單面（無封面）</option><option>A4雙面（無裝訂）</option><option>B4雙面（無裝訂）</option><option>A3雙面（無裝訂）</option></optgroup>
+<optgroup label="── 彩色/DM/叫紙 ──"><option>彩色印刷A4單面</option><option>A5單面彩色頭條新聞</option><option>彩色文宣DM-A4</option><option>彩色文宣DM-B4</option><option>叫紙A4（每包$90）</option><option>叫紙B4（每包$135）</option><option>叫紙A3（每包$175）</option></optgroup>`;
+
+function addItem(){
+  itemCounter++;const id=itemCounter;
+  const div=document.createElement('div');div.className='item-card';div.id='item-'+id;
+  div.innerHTML=`
+    <div class="item-header"><span class="item-num">ITEM #${String(id).padStart(2,'0')}</span>
+      <button type="button" class="item-del" onclick="delItem(${id})">✕</button></div>
+    <div class="item-body">
+      <div class="field"><label>檔案名稱 <span class="req">*</span></label><input type="text" id="name-${id}" placeholder="請輸入檔案名稱" oninput="updatePrice(${id})"></div>
+      <div class="field"><label>印刷類型 <span class="req">*</span></label>
+        <select id="type-${id}" onchange="updatePrice(${id})"><option value="">請選擇印刷類型</option>${TYPE_OPTIONS}</select></div>
+      <div class="grid2">
+        <div class="field"><label>數量（份） <span class="req">*</span></label><input type="number" id="qty-${id}" min="1" placeholder="0" oninput="updatePrice(${id})"></div>
+        <div class="field"><label>總頁數</label><input type="number" id="pages-${id}" min="1" placeholder="0" oninput="updatePrice(${id})"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>封面檔（選填）</label>
+          <div class="file-drop" id="coverdrop-${id}" onclick="document.getElementById('cover-${id}').click()">📎 點擊上傳封面檔</div>
+          <input type="file" class="file-input" id="cover-${id}" onchange="fileSelected(${id},'cover')">
+        </div>
+        <div class="field"><label>內頁檔（選填）</label>
+          <div class="file-drop" id="innerdrop-${id}" onclick="document.getElementById('inner-${id}').click()">📎 點擊上傳內頁檔</div>
+          <input type="file" class="file-input" id="inner-${id}" onchange="fileSelected(${id},'inner')">
+        </div>
+      </div>
+      <div class="price-chip" id="price-${id}"></div>
+    </div>`;
+  document.getElementById('items-list').appendChild(div);
+  div.querySelector('#name-'+id).focus();
+}
+function delItem(id){document.getElementById('item-'+id)?.remove()}
+function fileSelected(id,kind){
+  const input=document.getElementById(kind+'-'+id);
+  const drop=document.getElementById(kind+'drop-'+id);
+  if(input.files.length){drop.textContent='✓ '+input.files[0].name;drop.classList.add('has-file')}
+  else{drop.textContent='📎 點擊上傳'+(kind==='cover'?'封面檔':'內頁檔');drop.classList.remove('has-file')}
+}
+function updatePrice(id){
+  const type=document.getElementById('type-'+id)?.value;
+  const qty=document.getElementById('qty-'+id)?.value;
+  const pages=document.getElementById('pages-'+id)?.value;
+  const chip=document.getElementById('price-'+id);if(!chip)return;
+  const r=calcPrice(type,pages||1,qty);
+  if(r&&r.total>0){chip.innerHTML=`預估：<span class="amount">NT$ ${r.total.toLocaleString()}</span>　（${r.sheets}張/份 × $${r.unit}/份）`;chip.classList.add('show')}
+  else chip.classList.remove('show');
+}
+function showErr(id){document.getElementById('err-'+id)?.classList.add('show')}
+function clearErr(id){document.getElementById('err-'+id)?.classList.remove('show')}
+function validate(){
+  let ok=true;
+  ['room','teacher','customer','pickup'].forEach(id=>{
+    if(!document.getElementById(id)?.value?.trim()){showErr(id);ok=false}else clearErr(id);
+  });
+  const items=document.querySelectorAll('.item-card');
+  if(!items.length){alert('請至少新增一個印刷項目');return false}
+  items.forEach(card=>{
+    const id=card.id.replace('item-','');
+    if(!document.getElementById('name-'+id)?.value||!document.getElementById('type-'+id)?.value||!document.getElementById('qty-'+id)?.value)ok=false;
+  });
+  return ok;
+}
+async function submitOrder(){
+  if(!validate())return;
+  const btn=document.getElementById('submit-btn');
+  btn.disabled=true;btn.innerHTML='<span class="spin"></span>上傳中，請稍候…';
+
+  const formData=new FormData();
+  formData.append('room',document.getElementById('room').value);
+  formData.append('teacher',document.getElementById('teacher').value.trim());
+  formData.append('customer',document.getElementById('customer').value.trim());
+  formData.append('pickup',document.getElementById('pickup').value);
+  formData.append('note',document.getElementById('note').value.trim());
+
+  const items=[];
+  document.querySelectorAll('.item-card').forEach(card=>{
+    const id=card.id.replace('item-','');
+    items.push({
+      name:document.getElementById('name-'+id)?.value||'',
+      type:document.getElementById('type-'+id)?.value||'',
+      qty:+(document.getElementById('qty-'+id)?.value)||0,
+      pages:+(document.getElementById('pages-'+id)?.value)||0,
+    });
+    const coverInput=document.getElementById('cover-'+id);
+    const innerInput=document.getElementById('inner-'+id);
+    if(coverInput?.files[0])formData.append('coverFiles',coverInput.files[0]);
+    if(innerInput?.files[0])formData.append('innerFiles',innerInput.files[0]);
+  });
+  formData.append('items',JSON.stringify(items));
+
+  try{
+    const res=await fetch('/api/order',{method:'POST',body:formData});
+    const data=await res.json();
+    if(data.success){
+      document.getElementById('order-form').style.display='none';
+      document.getElementById('success-screen').style.display='block';
+      document.getElementById('order-ref').textContent='訂單編號：'+data.orderId+'　總額：NT$'+data.grandTotal.toLocaleString();
+      window.scrollTo({top:0,behavior:'smooth'});
+    }else throw new Error(data.error||'送出失敗');
+  }catch(e){
+    alert('⚠️ 送出失敗：'+e.message+'\\n請截圖後聯繫印刷廠');
+    btn.disabled=false;btn.innerHTML='確認送出訂單';
+  }
+}
+addItem();
+</script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "rewrites": [
+    { "source": "/admin", "destination": "/admin.html" },
+    { "source": "/",      "destination": "/index.html" }
+  ],
+  "functions": {
+    "api/order.js": {
+      "maxDuration": 30
+    }
+  }
+}

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>印刷後台管理</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0F1117;--card:#1A1D27;--ink:#F0EEE8;--ink2:#9A98A8;--ink3:#5A5870;--accent:#4F7BFF;--ad:rgba(79,123,255,.15);--green:#34C97A;--gd:rgba(52,201,122,.12);--amber:#F5A623;--ambd:rgba(245,166,35,.12);--red:#FF5B5B;--border:rgba(255,255,255,.08);--r:12px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+#gate{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:999}
+.lbox{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:40px;width:300px;text-align:center}
+.lbox h2{font-size:19px;margin-bottom:5px}.lbox p{font-size:13px;color:var(--ink2);margin-bottom:22px}
+.lbox input{width:100%;padding:11px 13px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;color:var(--ink);font-size:14px;outline:none;margin-bottom:11px;text-align:center;letter-spacing:.2em}
+.lbox button{width:100%;padding:11px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-weight:600}
+.lerr{font-size:12px;color:var(--red);margin-top:7px;display:none}
+.top{background:var(--card);border-bottom:1px solid var(--border);padding:15px 22px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.top h1{font-size:15px;font-weight:700}
+.top-r{display:flex;gap:8px;align-items:center}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:18px 22px}
+.sc{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 18px}
+.sc .lbl{font-size:11px;color:var(--ink3);text-transform:uppercase;margin-bottom:7px}
+.sc .val{font-size:22px;font-family:'DM Mono',monospace;font-weight:500}
+.sc .val.g{color:var(--green)}.sc .val.a{color:var(--amber)}
+.filt{display:flex;gap:8px;padding:0 22px 14px;flex-wrap:wrap;align-items:center}
+.fsel,.finp{padding:7px 11px;background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--ink);font-size:13px;outline:none}
+.finp{width:190px}
+.btn{padding:7px 14px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--ink2);font-size:13px;cursor:pointer}
+.btn:hover{border-color:var(--accent);color:var(--accent);background:var(--ad)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.tw{padding:0 22px 22px;overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:9px 13px;font-size:11px;font-weight:600;color:var(--ink3);text-transform:uppercase;border-bottom:1px solid var(--border);white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--border)}
+tbody tr:hover{background:rgba(255,255,255,.03)}
+td{padding:11px 13px;vertical-align:top}
+.badge{display:inline-block;padding:2px 7px;border-radius:20px;font-size:11px}
+.bb{background:var(--ad);color:var(--accent)}.ba{background:var(--ambd);color:var(--amber)}
+.oid{font-family:'DM Mono',monospace;font-size:11px;color:var(--ink3)}
+.amt{font-family:'DM Mono',monospace;font-size:14px;color:var(--green)}
+.dtog{background:none;border:none;color:var(--accent);font-size:12px;cursor:pointer;padding:2px 0}
+.ddet{margin-top:5px;font-size:12px;color:var(--ink2);line-height:1.8;display:none}
+.ddet.show{display:block}
+.ddet a{color:var(--accent);text-decoration:none;margin-right:8px}
+.empty{text-align:center;padding:60px 22px;color:var(--ink3)}
+.load{text-align:center;padding:40px;color:var(--ink3)}
+</style>
+</head>
+<body>
+<div id="gate">
+  <div class="lbox">
+    <div style="font-size:38px;margin-bottom:11px">🔐</div>
+    <h2>後台管理</h2><p>請輸入管理密碼</p>
+    <input type="password" id="pw" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()">
+    <button onclick="login()">進入後台</button>
+    <div class="lerr" id="lerr">密碼錯誤，請再試一次</div>
+  </div>
+</div>
+
+<div id="app" style="display:none">
+  <div class="top">
+    <h1>🖨️ 印刷後台管理 v2</h1>
+    <div class="top-r">
+      <span id="upd" style="font-size:11px;color:var(--ink3)"></span>
+      <button class="btn" onclick="load()">🔄 重新整理</button>
+      <button class="btn pri" onclick="exportCSV()">匯出 CSV</button>
+    </div>
+  </div>
+  <div class="stats">
+    <div class="sc"><div class="lbl">本月訂單</div><div class="val" id="s1">—</div></div>
+    <div class="sc"><div class="lbl">本月金額</div><div class="val g" id="s2">—</div></div>
+    <div class="sc"><div class="lbl">待取件</div><div class="val a" id="s3">—</div></div>
+    <div class="sc"><div class="lbl">教室數</div><div class="val" id="s4">—</div></div>
+  </div>
+  <div class="filt">
+    <input class="finp" id="sq" placeholder="搜尋客戶/老師/檔案..." oninput="render()">
+    <select class="fsel" id="fr" onchange="render()">
+      <option value="">全部教室</option><option>大里許豪教室</option><option>大里育豪教室</option>
+      <option>苑裡勁學教室</option><option>員林教室</option><option>其他教室（備註）</option>
+    </select>
+    <select class="fsel" id="fm" onchange="render()"><option value="">全部月份</option></select>
+    <button class="btn" onclick="clr()">清除篩選</button>
+  </div>
+  <div class="tw">
+    <div id="tload" class="load">載入中...</div>
+    <div id="tempty" class="empty" style="display:none">📭 沒有符合條件的訂單</div>
+    <table id="tbl" style="display:none">
+      <thead><tr><th>訂單編號</th><th>時間</th><th>客戶/老師</th><th>教室</th><th>取件</th><th>項目</th><th>金額</th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+let orders=[];
+async function login(){
+  const pw=document.getElementById('pw').value;
+  try{
+    const r=await fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})});
+    const d=await r.json();
+    if(d.ok){sessionStorage.setItem('tok',d.token);go()}else document.getElementById('lerr').style.display='block';
+  }catch{document.getElementById('lerr').style.display='block'}
+}
+function go(){document.getElementById('gate').style.display='none';document.getElementById('app').style.display='block';load()}
+async function load(){
+  document.getElementById('tload').style.display='block';
+  document.getElementById('tbl').style.display='none';
+  document.getElementById('tempty').style.display='none';
+  try{
+    const r=await fetch('/api/orders',{headers:{'x-admin-token':sessionStorage.getItem('tok')||''}});
+    const d=await r.json();
+    orders=d.orders||[];
+    document.getElementById('upd').textContent='更新：'+new Date().toLocaleTimeString('zh-TW');
+    fillMonths();stats();render();
+  }catch{orders=[];render()}
+  document.getElementById('tload').style.display='none';
+}
+function fillMonths(){
+  const ms=[...new Set(orders.map(o=>o.timestamp?.slice(0,7)))].sort().reverse();
+  const sel=document.getElementById('fm'),cur=sel.value;
+  sel.innerHTML='<option value="">全部月份</option>';
+  ms.forEach(m=>{const o=document.createElement('option');o.value=o.textContent=m;if(m===cur)o.selected=true;sel.appendChild(o)});
+}
+function stats(){
+  const now=new Date(),ym=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const mo=orders.filter(o=>o.timestamp?.startsWith(ym));
+  document.getElementById('s1').textContent=mo.length;
+  document.getElementById('s2').textContent='$'+mo.reduce((s,o)=>s+(o.grandTotal||0),0).toLocaleString();
+  document.getElementById('s3').textContent=orders.filter(o=>o.pickup&&new Date(o.pickup)>=new Date()).length;
+  document.getElementById('s4').textContent=new Set(orders.map(o=>o.room)).size;
+}
+function filtered(){
+  const q=document.getElementById('sq').value.toLowerCase(),rm=document.getElementById('fr').value,mo=document.getElementById('fm').value;
+  return orders.filter(o=>{
+    if(rm&&o.room!==rm)return false;
+    if(mo&&!o.timestamp?.startsWith(mo))return false;
+    if(q){const h=[o.customer,o.teacher,o.room,...(o.items||[]).map(i=>i.name)].join(' ').toLowerCase();if(!h.includes(q))return false}
+    return true;
+  });
+}
+function render(){
+  const os=filtered().sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
+  const tbody=document.getElementById('tbody');tbody.innerHTML='';
+  if(!os.length){document.getElementById('tbl').style.display='none';document.getElementById('tempty').style.display='block';return}
+  document.getElementById('tempty').style.display='none';document.getElementById('tbl').style.display='table';
+  os.forEach(o=>{
+    const dt=new Date(o.timestamp),ds=`${dt.getMonth()+1}/${dt.getDate()} ${dt.getHours()}:${String(dt.getMinutes()).padStart(2,'0')}`;
+    const pk=o.pickup?new Date(o.pickup+'T00:00:00').toLocaleDateString('zh-TW',{month:'short',day:'numeric'}):'—';
+    const soon=o.pickup&&new Date(o.pickup+'T23:59:59')>=new Date();
+    const fileLinks=[...(o.coverLinks||[]).map((l,i)=>`<a href="${l}" target="_blank">📂封面${i+1}</a>`),...(o.innerLinks||[]).map((l,i)=>`<a href="${l}" target="_blank">📄內頁${i+1}</a>`)].join(' ');
+    const det=(o.items||[]).map((x,i)=>`<div>${i+1}. ${x.name} / ${x.type} / ${x.qty}份${x.pages?' / '+x.pages+'頁':''} <span style="color:var(--green)">$${(x.total||0).toLocaleString()}</span></div>`).join('')+(fileLinks?`<div style="margin-top:4px">${fileLinks}</div>`:'');
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><div class="oid">${(o.orderId||'').slice(-8)}</div></td>
+      <td style="color:var(--ink2);font-size:12px;white-space:nowrap">${ds}</td>
+      <td><div style="font-weight:500">${o.customer||'—'}</div><div style="font-size:12px;color:var(--ink3)">${o.teacher||''}</div></td>
+      <td><span class="badge bb">${o.room||'—'}</span></td>
+      <td>${soon?`<span class="badge ba">${pk}</span>`:pk}</td>
+      <td><button class="dtog" onclick="tog(this)">▶ ${(o.items||[]).length} 項</button><div class="ddet">${det}</div></td>
+      <td><span class="amt">$${(o.grandTotal||0).toLocaleString()}</span></td>`;
+    tbody.appendChild(tr);
+  });
+}
+function tog(btn){const d=btn.nextElementSibling,s=d.classList.toggle('show');btn.textContent=(s?'▼ ':'▶ ')+btn.textContent.slice(2)}
+function clr(){document.getElementById('sq').value='';document.getElementById('fr').value='';document.getElementById('fm').value='';render()}
+function exportCSV(){
+  const os=filtered();
+  const rows=[['訂單編號','時間','客戶','老師','教室','取件日','檔案名稱','印刷類型','數量','頁數','小計']];
+  os.forEach(o=>(o.items||[]).forEach(x=>rows.push([o.orderId,o.timestamp,o.customer,o.teacher,o.room,o.pickup,x.name,x.type,x.qty,x.pages||'',x.total||''])));
+  const csv=rows.map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}));a.download=`印刷訂單_${new Date().toISOString().slice(0,10)}.csv`;a.click();
+}
+if(sessionStorage.getItem('tok'))go();
+</script>
+</body>
+</html>

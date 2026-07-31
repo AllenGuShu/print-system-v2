@@ -1,0 +1,10 @@
+{
+  "name": "print-order-system-v2",
+  "version": "2.0.0",
+  "private": true,
+  "dependencies": {
+    "googleapis": "^140.0.0",
+    "formidable": "^3.5.1"
+  },
+  "engines": { "node": "20.x" }
+}
