@@ -1,4 +1,4 @@
-// api/order.js — 處理下單：上傳檔案到 Drive、寫入 Sheet、寄 email
+// api/order.js — 處理下單：透過 Apps Script Web App 上傳檔案、寫入 Sheet、寄 email
 import { google } from 'googleapis';
 import formidable from 'formidable';
 import fs from 'fs';
@@ -8,35 +8,31 @@ export const config = {
   api: { bodyParser: false },
 };
 
+const APPS_SCRIPT_URL = process.env.APPS_SCRIPT_URL;
+
 async function getAuth() {
   const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
   return new google.auth.GoogleAuth({
     credentials,
-    scopes: [
-      'https://www.googleapis.com/auth/spreadsheets',
-      'https://www.googleapis.com/auth/drive',
-    ],
+    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
   });
 }
 
-async function uploadToDrive(drive, filePath, fileName, mimeType, folderId) {
-  const res = await drive.files.create({
-    requestBody: {
-      name: fileName,
-      parents: folderId ? [folderId] : undefined,
-    },
-    media: {
-      mimeType,
-      body: fs.createReadStream(filePath),
-    },
-    fields: 'id, webViewLink',
+// 透過 Apps Script Web App 上傳檔案（用你自己的 Google 帳號權限，不受服務帳戶容量限制）
+async function uploadViaAppsScript(filePath, fileName, mimeType) {
+  const fileBuffer = fs.readFileSync(filePath);
+  const base64Data = fileBuffer.toString('base64');
+
+  const res = await fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fileName, mimeType, base64Data }),
+    redirect: 'follow',
   });
-  // 設為任何人可檢視
-  await drive.permissions.create({
-    fileId: res.data.id,
-    requestBody: { role: 'reader', type: 'anyone' },
-  });
-  return res.data.webViewLink;
+
+  const data = await res.json();
+  if (!data.success) throw new Error('檔案上傳失敗: ' + data.error);
+  return data.url;
 }
 
 function parseForm(req) {
@@ -65,28 +61,23 @@ export default async function handler(req, res) {
     const customer = get(fields.customer);
     const pickup   = get(fields.pickup);
     const note     = get(fields.note) || '';
-    const itemsRaw = get(fields.items); // JSON string of item metadata (name/type/qty/pages)
+    const itemsRaw = get(fields.items);
     const items = JSON.parse(itemsRaw);
 
-    const auth  = await getAuth();
-    const drive = google.drive({ version: 'v3', auth });
-    const sheets = google.sheets({ version: 'v4', auth });
-
-    const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
     const orderId = `ORD-${Date.now()}`;
 
-    // 上傳檔案（封面檔、內頁檔，皆為選填、可能多檔）
+    // 上傳檔案（透過 Apps Script，用你的 Drive 權限）
     const coverFileList = files.coverFiles ? (Array.isArray(files.coverFiles) ? files.coverFiles : [files.coverFiles]) : [];
     const innerFileList = files.innerFiles ? (Array.isArray(files.innerFiles) ? files.innerFiles : [files.innerFiles]) : [];
 
     const coverLinks = [];
     for (const f of coverFileList) {
-      const link = await uploadToDrive(drive, f.filepath, `${orderId}_封面_${f.originalFilename}`, f.mimetype, folderId);
+      const link = await uploadViaAppsScript(f.filepath, `${orderId}_封面_${f.originalFilename}`, f.mimetype);
       coverLinks.push(link);
     }
     const innerLinks = [];
     for (const f of innerFileList) {
-      const link = await uploadToDrive(drive, f.filepath, `${orderId}_內頁_${f.originalFilename}`, f.mimetype, folderId);
+      const link = await uploadViaAppsScript(f.filepath, `${orderId}_內頁_${f.originalFilename}`, f.mimetype);
       innerLinks.push(link);
     }
 
@@ -101,6 +92,9 @@ export default async function handler(req, res) {
     const timestamp = new Date().toISOString();
 
     // 寫入 Google Sheet（每個項目一行）
+    const auth = await getAuth();
+    const sheets = google.sheets({ version: 'v4', auth });
+
     const rows = calculatedItems.map(item => [
       orderId, timestamp, customer, room, teacher, pickup,
       item.name, item.type, item.qty, item.pages || '',
@@ -131,7 +125,6 @@ export default async function handler(req, res) {
 }
 
 async function sendNotificationEmail({ orderId, timestamp, customer, room, teacher, pickup, note, items, grandTotal, coverLinks, innerLinks, sheetUrl }) {
-  // Vercel 上寄信最簡單的方式是用第三方 API（例如 Resend），這裡先用 fetch 呼叫 Resend
   const RESEND_API_KEY = process.env.RESEND_API_KEY;
   const NOTIFY_EMAILS = (process.env.NOTIFY_EMAILS || '').split(',').map(e => e.trim()).filter(Boolean);
   if (!RESEND_API_KEY || NOTIFY_EMAILS.length === 0) {
