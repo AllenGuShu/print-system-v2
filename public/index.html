@@ -95,7 +95,26 @@ textarea{resize:vertical;min-height:72px}
           </div>
           <div class="field">
             <label>授課教師 <span class="req">*</span></label>
-            <input type="text" id="teacher" placeholder="老師姓名">
+            <select id="teacher">
+              <option value="">請選擇老師</option>
+              <option>大里教室(行政用)</option>
+              <option>育豪教室(行政用)</option>
+              <option>苑裡教室(行政用)</option>
+              <option>許豪老師(許豪英文團隊)</option>
+              <option>許婕老師(許豪英文團隊)</option>
+              <option>許錡老師(許豪英文團隊)</option>
+              <option>Ethan老師(許豪英文團隊)</option>
+              <option>Ted老師(許豪英文團隊)</option>
+              <option>Justin老師(許豪英文團隊)</option>
+              <option>古冀老師(古冀數學團隊)</option>
+              <option>竺祈老師(古冀數學團隊)</option>
+              <option>施鴻老師(古冀數學團隊)</option>
+              <option>證浩老師</option>
+              <option>袁則老師</option>
+              <option>薛睿老師</option>
+              <option>陳翔老師</option>
+              <option>其他</option>
+            </select>
             <div class="field-err" id="err-teacher">請填寫授課教師</div>
           </div>
         </div>
@@ -264,7 +283,7 @@ async function submitOrder(){
       window.scrollTo({top:0,behavior:'smooth'});
     }else throw new Error(data.error||'送出失敗');
   }catch(e){
-    alert('⚠️ 送出失敗：'+e.message+'\\n請截圖後聯繫印刷廠');
+    alert('⚠️ 送出失敗：'+e.message+'\n請截圖後聯繫印刷廠');
     btn.disabled=false;btn.innerHTML='確認送出訂單';
   }
 }
