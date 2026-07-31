@@ -4,152 +4,370 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>印刷下單系統</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&family=Zen+Kaku+Gothic+New:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--paper:#FAF8F3;--white:#fff;--ink:#18181A;--ink2:#52525B;--ink3:#A1A1AA;--line:#E4E4E7;--line2:#D4D4D8;--blue:#2563EB;--blue2:#1D4ED8;--blue-l:#EFF6FF;--green:#16A34A;--green-l:#F0FDF4;--red:#DC2626;--red-l:#FEF2F2;--r8:8px;--r12:12px;--r16:16px;--shadow:0 1px 3px rgba(0,0,0,.08)}
-body{font-family:'Noto Sans TC',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;padding-bottom:60px}
-.site-header{background:var(--ink);color:#fff;padding:0 20px;position:sticky;top:0;z-index:100}
-.header-inner{max-width:700px;margin:0 auto;height:56px;display:flex;align-items:center;gap:12px}
-.header-icon{width:32px;height:32px;background:rgba(255,255,255,.1);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
-.header-title{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600}
-.header-sub{font-size:11px;color:rgba(255,255,255,.4);margin-left:auto}
-.main{max-width:700px;margin:0 auto;padding:20px 16px 0}
-.section{background:#fff;border:1px solid var(--line);border-radius:var(--r16);overflow:hidden;margin-bottom:12px;box-shadow:var(--shadow)}
-.section-head{padding:14px 20px 12px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
-.section-icon{width:28px;height:28px;background:var(--blue-l);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
-.section-title{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600}
-.section-body{padding:18px 20px}
-.field{margin-bottom:14px}
+
+/* ── Design tokens: 「紙印」— cool paper-mill palette ── */
+:root{
+  --paper:      #F4F6F8;
+  --paper-deep: #EBEFF2;
+  --white:      #FFFFFF;
+  --ink:        #1B2430;
+  --ink2:       #56626F;
+  --ink3:       #94A0AC;
+  --line:       #DDE3E8;
+  --line2:      #C9D1D8;
+  --teal:       #1D6E6B;
+  --teal-deep:  #14504E;
+  --teal-tint:  #E4F1F0;
+  --amber:      #C97A2E;
+  --amber-tint: #FBF0E2;
+  --red:        #C1443A;
+  --red-tint:   #FBEBEA;
+  --r6: 6px; --r10: 10px; --r14: 14px; --r20: 20px;
+  --shadow-sm: 0 1px 2px rgba(27,36,48,.06);
+  --shadow-md: 0 4px 16px rgba(27,36,48,.08);
+}
+
+html{scroll-behavior:smooth}
+body{
+  font-family:'Noto Sans TC',sans-serif;
+  background:var(--paper);
+  color:var(--ink);
+  min-height:100vh;
+  padding-bottom:64px;
+  -webkit-font-smoothing:antialiased;
+  background-image:
+    radial-gradient(circle at 15% 8%, rgba(29,110,107,.04) 0%, transparent 45%),
+    radial-gradient(circle at 85% 92%, rgba(201,122,46,.04) 0%, transparent 45%);
+}
+
+/* ── Header: printer's mark ── */
+.site-header{
+  background:var(--white);
+  border-bottom:1px solid var(--line);
+  padding:0 20px;
+  position:sticky; top:0; z-index:100;
+}
+.header-inner{
+  max-width:640px; margin:0 auto; height:64px;
+  display:flex; align-items:center; gap:14px;
+}
+.press-mark{
+  width:38px; height:38px; flex-shrink:0;
+  border-radius:var(--r10);
+  background:var(--teal);
+  display:flex; align-items:center; justify-content:center;
+  position:relative;
+}
+.press-mark svg{width:20px;height:20px}
+.header-text{display:flex; flex-direction:column; gap:1px}
+.header-title{
+  font-family:'Zen Kaku Gothic New',sans-serif;
+  font-size:16px; font-weight:700; letter-spacing:.01em; color:var(--ink);
+}
+.header-sub{font-size:11px; color:var(--ink3); letter-spacing:.02em}
+.header-tag{
+  margin-left:auto; font-family:'JetBrains Mono',monospace;
+  font-size:10px; color:var(--teal); background:var(--teal-tint);
+  padding:4px 9px; border-radius:20px; letter-spacing:.03em; font-weight:500;
+}
+
+.main{max-width:640px; margin:0 auto; padding:28px 16px 0}
+
+/* ── Intro strip ── */
+.intro{padding:2px 4px 22px; text-align:center}
+.intro h1{
+  font-family:'Zen Kaku Gothic New',sans-serif;
+  font-size:21px; font-weight:700; color:var(--ink); margin-bottom:6px; letter-spacing:.01em;
+}
+.intro p{font-size:12.5px; color:var(--ink2); line-height:1.6}
+
+/* ── Section card ── */
+.section{
+  background:var(--white);
+  border:1px solid var(--line);
+  border-radius:var(--r20);
+  overflow:hidden;
+  margin-bottom:14px;
+  box-shadow:var(--shadow-sm);
+  transition:box-shadow .2s;
+}
+.section:hover{box-shadow:var(--shadow-md)}
+.section-head{
+  padding:16px 22px 14px;
+  border-bottom:1px solid var(--line);
+  display:flex; align-items:center; gap:11px;
+  background:linear-gradient(180deg, rgba(29,110,107,.02), transparent);
+}
+.section-badge{
+  width:26px; height:26px; border-radius:8px;
+  background:var(--teal-tint); color:var(--teal-deep);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600;
+  flex-shrink:0;
+}
+.section-title{
+  font-family:'Zen Kaku Gothic New',sans-serif;
+  font-size:14px; font-weight:700; color:var(--ink); letter-spacing:.01em;
+}
+.section-hint{margin-left:auto; font-size:10.5px; color:var(--ink3)}
+.section-body{padding:20px 22px}
+
+/* ── Fields ── */
+.field{margin-bottom:15px}
 .field:last-child{margin-bottom:0}
-label{display:block;font-size:12px;font-weight:500;color:var(--ink2);margin-bottom:5px}
-.req{color:var(--red);margin-left:1px}
-input[type=text],input[type=date],input[type=number],select,textarea{width:100%;padding:9px 12px;font-size:14px;font-family:inherit;color:var(--ink);background:#fff;border:1.5px solid var(--line2);border-radius:8px;outline:none;appearance:none}
-input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
-select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' fill='none'%3E%3Cpath d='M1 1.5l6 6 6-6' stroke='%2371717A' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px;cursor:pointer}
-textarea{resize:vertical;min-height:72px}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.items-list{display:flex;flex-direction:column;gap:10px;margin-bottom:10px}
-.item-card{border:1.5px solid var(--line);border-radius:var(--r12);overflow:hidden;background:#fff}
-.item-card:focus-within{border-color:var(--blue)}
-.item-header{padding:10px 14px 9px;background:#FAFAFA;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
-.item-num{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink3);font-weight:500}
-.item-del{width:24px;height:24px;border:1px solid var(--line2);border-radius:4px;background:#fff;color:var(--ink3);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center}
-.item-del:hover{background:var(--red-l);border-color:var(--red);color:var(--red)}
-.item-body{padding:14px}
-.price-chip{display:none;margin-top:10px;padding:9px 12px;background:var(--green-l);border:1px solid #BBF7D0;border-radius:8px;font-size:12px;color:var(--green)}
-.price-chip.show{display:block}
-.price-chip .amount{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:500}
-.file-drop{border:1.5px dashed var(--line2);border-radius:8px;padding:14px;text-align:center;cursor:pointer;transition:all .15s;font-size:12px;color:var(--ink3)}
-.file-drop:hover{border-color:var(--blue);background:var(--blue-l);color:var(--blue)}
-.file-drop.has-file{border-color:var(--green);background:var(--green-l);color:var(--green)}
+label{
+  display:block; font-size:11.5px; font-weight:600; color:var(--ink2);
+  margin-bottom:6px; letter-spacing:.01em;
+}
+.req{color:var(--red); margin-left:2px}
+
+input[type=text],input[type=date],input[type=number],select,textarea{
+  width:100%; padding:10px 13px; font-size:14px; font-family:'Noto Sans TC',sans-serif;
+  color:var(--ink); background:var(--paper); border:1.5px solid var(--line2);
+  border-radius:var(--r10); outline:none; appearance:none;
+  transition:border-color .15s, box-shadow .15s, background .15s;
+}
+input:focus,select:focus,textarea:focus{
+  border-color:var(--teal); background:var(--white);
+  box-shadow:0 0 0 3.5px rgba(29,110,107,.1);
+}
+input::placeholder,textarea::placeholder{color:var(--ink3)}
+select{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='9' fill='none'%3E%3Cpath d='M1 1.5l5.5 5.5 5.5-5.5' stroke='%2394A0AC' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 13px center; padding-right:38px; cursor:pointer;
+}
+textarea{resize:vertical; min-height:76px; line-height:1.6}
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+
+/* ── Item cards ── */
+.items-list{display:flex; flex-direction:column; gap:12px; margin-bottom:12px}
+.item-card{
+  border:1.5px solid var(--line); border-radius:var(--r14);
+  overflow:hidden; background:var(--white); transition:border-color .15s;
+}
+.item-card:focus-within{border-color:var(--teal)}
+.item-header{
+  padding:11px 16px; background:var(--paper-deep);
+  border-bottom:1px solid var(--line);
+  display:flex; align-items:center; justify-content:space-between;
+}
+.item-num{
+  font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--teal-deep);
+  font-weight:600; letter-spacing:.02em; display:flex; align-items:center; gap:6px;
+}
+.item-num::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--amber)}
+.item-del{
+  width:25px; height:25px; border:1px solid var(--line2); border-radius:7px;
+  background:var(--white); color:var(--ink3); font-size:14px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; transition:all .15s;
+}
+.item-del:hover{background:var(--red-tint); border-color:var(--red); color:var(--red)}
+.item-body{padding:16px}
+
+.price-chip{
+  display:none; margin-top:12px; padding:11px 14px;
+  background:var(--teal-tint); border:1px solid rgba(29,110,107,.18); border-radius:var(--r10);
+  font-size:12px; color:var(--teal-deep); align-items:center; gap:9px;
+}
+.price-chip.show{display:flex}
+.price-chip .amount{font-family:'JetBrains Mono',monospace; font-size:16px; font-weight:600; color:var(--teal-deep)}
+.price-chip .detail{color:var(--teal); font-size:10.5px}
+
+.file-drop{
+  border:1.5px dashed var(--line2); border-radius:var(--r10); padding:15px;
+  text-align:center; cursor:pointer; transition:all .15s; font-size:12px; color:var(--ink3);
+  background:var(--paper);
+}
+.file-drop:hover{border-color:var(--teal); background:var(--teal-tint); color:var(--teal-deep)}
+.file-drop.has-file{border-color:var(--teal); background:var(--teal-tint); color:var(--teal-deep); border-style:solid; font-weight:500}
 .file-input{display:none}
-.add-item-btn{width:100%;padding:11px;background:none;border:1.5px dashed var(--line2);border-radius:var(--r12);color:var(--ink3);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
-.add-item-btn:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-l)}
-.submit-wrap{margin-top:14px}
-.submit-btn{width:100%;padding:14px;background:var(--blue);color:#fff;border:none;border-radius:var(--r12);font-size:15px;font-weight:700;font-family:'Space Grotesk',sans-serif;cursor:pointer;box-shadow:0 2px 8px rgba(37,99,235,.25)}
-.submit-btn:hover{background:var(--blue2)}
-.submit-btn:disabled{background:var(--ink3);cursor:not-allowed}
-.submit-note{text-align:center;font-size:11px;color:var(--ink3);margin-top:8px}
-.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:rotate .6s linear infinite;vertical-align:middle;margin-right:6px}
+
+.add-item-btn{
+  width:100%; padding:13px; background:var(--white);
+  border:1.5px dashed var(--line2); border-radius:var(--r14);
+  color:var(--ink2); font-size:13px; font-weight:500; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:7px;
+  transition:all .15s;
+}
+.add-item-btn:hover{border-color:var(--teal); color:var(--teal-deep); background:var(--teal-tint)}
+
+/* ── Submit ── */
+.submit-wrap{margin-top:18px}
+.submit-btn{
+  width:100%; padding:16px; background:var(--teal); color:#fff; border:none;
+  border-radius:var(--r14); font-size:15.5px; font-weight:700;
+  font-family:'Zen Kaku Gothic New',sans-serif; letter-spacing:.02em;
+  cursor:pointer; box-shadow:0 4px 14px rgba(29,110,107,.28);
+  transition:background .15s, transform .1s, box-shadow .15s;
+}
+.submit-btn:hover{background:var(--teal-deep); transform:translateY(-1px); box-shadow:0 6px 20px rgba(29,110,107,.34)}
+.submit-btn:active{transform:translateY(0)}
+.submit-btn:disabled{background:var(--ink3); cursor:not-allowed; transform:none; box-shadow:none}
+.submit-note{text-align:center; font-size:11px; color:var(--ink3); margin-top:10px; line-height:1.6}
+
+.spin{
+  display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,.35);
+  border-top-color:#fff; border-radius:50%; animation:rotate .6s linear infinite;
+  vertical-align:middle; margin-right:7px;
+}
 @keyframes rotate{to{transform:rotate(360deg)}}
-#success-screen{display:none;text-align:center;padding:64px 20px 40px}
-.success-icon{width:72px;height:72px;background:var(--green-l);border:2px solid #BBF7D0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 20px}
-.order-ref{display:inline-block;margin:18px auto 0;padding:8px 16px;background:#F4F4F5;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12px}
-.reset-btn{margin-top:24px;padding:10px 24px;background:var(--ink);color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer}
-.field-err{font-size:11px;color:var(--red);margin-top:4px;display:none}
+
+/* ── Success ── */
+#success-screen{display:none; text-align:center; padding:70px 20px 40px}
+.success-mark{
+  width:76px; height:76px; margin:0 auto 22px; border-radius:50%;
+  background:var(--teal-tint); border:2px solid rgba(29,110,107,.25);
+  display:flex; align-items:center; justify-content:center;
+}
+.success-mark svg{width:32px;height:32px}
+#success-screen h2{
+  font-family:'Zen Kaku Gothic New',sans-serif; font-size:23px; font-weight:700;
+  margin-bottom:9px; color:var(--ink);
+}
+#success-screen p{font-size:14px; color:var(--ink2); line-height:1.7}
+.order-ref{
+  display:inline-block; margin:20px auto 0; padding:9px 18px;
+  background:var(--paper-deep); border:1px solid var(--line); border-radius:var(--r10);
+  font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--ink2);
+}
+.reset-btn{
+  margin-top:26px; padding:11px 26px; background:var(--ink); color:#fff; border:none;
+  border-radius:var(--r10); font-size:13px; cursor:pointer; font-weight:500; transition:opacity .15s;
+}
+.reset-btn:hover{opacity:.82}
+
+.field-err{font-size:11px; color:var(--red); margin-top:5px; display:none}
 .field-err.show{display:block}
-@media(max-width:500px){.grid2{grid-template-columns:1fr}.section-body{padding:14px}.item-body{padding:12px}}
+
+@media(max-width:520px){
+  .grid2{grid-template-columns:1fr}
+  .section-body{padding:16px}
+  .item-body{padding:14px}
+  .header-inner{height:58px}
+}
 </style>
 </head>
 <body>
+
 <header class="site-header">
   <div class="header-inner">
-    <div class="header-icon">🖨️</div>
-    <span class="header-title">印刷下單系統</span>
-    <span class="header-sub">v2.0 含檔案上傳</span>
+    <div class="press-mark">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v7H6v-7z" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="header-text">
+      <span class="header-title">印刷下單系統</span>
+      <span class="header-sub">填單即算價 · 檔案直送印刷廠</span>
+    </div>
+    <span class="header-tag">v2.1</span>
   </div>
 </header>
 
 <main class="main">
+
   <div id="success-screen">
-    <div class="success-icon">✓</div>
-    <h2 style="font-family:'Space Grotesk',sans-serif;font-size:22px;margin-bottom:8px">訂單已送出！</h2>
-    <p style="color:var(--ink2);font-size:14px">感謝您的下單，印刷廠已收到您的訂單與檔案</p>
+    <div class="success-mark">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#14504E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <h2>訂單已送出</h2>
+    <p>印刷廠已收到您的訂單與檔案<br>如有疑問請直接聯繫印刷廠</p>
     <div class="order-ref" id="order-ref">--</div><br>
     <button class="reset-btn" onclick="location.reload()">再下一筆訂單</button>
   </div>
 
-  <form id="order-form" onsubmit="return false">
-    <div class="section">
-      <div class="section-head"><div class="section-icon">👤</div><span class="section-title">基本資料</span></div>
-      <div class="section-body">
-        <div class="grid2">
-          <div class="field">
-            <label>上課教室 <span class="req">*</span></label>
-            <select id="room"><option value="">請選擇教室</option>
-              <option>大里許豪教室</option><option>大里育豪教室</option>
-              <option>苑裡勁學教室</option><option>員林教室</option><option>其他教室（備註）</option>
-            </select>
-            <div class="field-err" id="err-room">請選擇教室</div>
+  <div id="form-wrap">
+    <div class="intro">
+      <h1>填寫印刷需求</h1>
+      <p>選好教室與老師，逐項填入印刷品項，系統會即時算出金額</p>
+    </div>
+
+    <form id="order-form" onsubmit="return false">
+      <div class="section">
+        <div class="section-head">
+          <div class="section-badge">01</div>
+          <span class="section-title">基本資料</span>
+        </div>
+        <div class="section-body">
+          <div class="grid2">
+            <div class="field">
+              <label>上課教室 <span class="req">*</span></label>
+              <select id="room"><option value="">請選擇教室</option>
+                <option>大里許豪教室</option><option>大里育豪教室</option>
+                <option>苑裡勁學教室</option><option>員林教室</option><option>其他教室（備註）</option>
+              </select>
+              <div class="field-err" id="err-room">請選擇教室</div>
+            </div>
+            <div class="field">
+              <label>授課教師 <span class="req">*</span></label>
+              <select id="teacher">
+                <option value="">請選擇老師</option>
+                <option>大里教室(行政用)</option>
+                <option>育豪教室(行政用)</option>
+                <option>苑裡教室(行政用)</option>
+                <option>許豪老師(許豪英文團隊)</option>
+                <option>許婕老師(許豪英文團隊)</option>
+                <option>許錡老師(許豪英文團隊)</option>
+                <option>Ethan老師(許豪英文團隊)</option>
+                <option>Ted老師(許豪英文團隊)</option>
+                <option>Justin老師(許豪英文團隊)</option>
+                <option>古冀老師(古冀數學團隊)</option>
+                <option>竺祈老師(古冀數學團隊)</option>
+                <option>施鴻老師(古冀數學團隊)</option>
+                <option>證浩老師</option>
+                <option>袁則老師</option>
+                <option>薛睿老師</option>
+                <option>陳翔老師</option>
+                <option>其他</option>
+              </select>
+              <div class="field-err" id="err-teacher">請選擇授課教師</div>
+            </div>
           </div>
           <div class="field">
-            <label>授課教師 <span class="req">*</span></label>
-            <select id="teacher">
-              <option value="">請選擇老師</option>
-              <option>大里教室(行政用)</option>
-              <option>育豪教室(行政用)</option>
-              <option>苑裡教室(行政用)</option>
-              <option>許豪老師(許豪英文團隊)</option>
-              <option>許婕老師(許豪英文團隊)</option>
-              <option>許錡老師(許豪英文團隊)</option>
-              <option>Ethan老師(許豪英文團隊)</option>
-              <option>Ted老師(許豪英文團隊)</option>
-              <option>Justin老師(許豪英文團隊)</option>
-              <option>古冀老師(古冀數學團隊)</option>
-              <option>竺祈老師(古冀數學團隊)</option>
-              <option>施鴻老師(古冀數學團隊)</option>
-              <option>證浩老師</option>
-              <option>袁則老師</option>
-              <option>薛睿老師</option>
-              <option>陳翔老師</option>
-              <option>其他</option>
-            </select>
-            <div class="field-err" id="err-teacher">請填寫授課教師</div>
+            <label>訂單客戶名 <span class="req">*</span></label>
+            <input type="text" id="customer" placeholder="姓名或班級簡稱">
+            <div class="field-err" id="err-customer">請填寫客戶名</div>
+          </div>
+          <div class="field">
+            <label>取件時間 <span class="req">*</span></label>
+            <input type="date" id="pickup">
+            <div class="field-err" id="err-pickup">請選擇取件時間</div>
           </div>
         </div>
-        <div class="field">
-          <label>訂單客戶名 <span class="req">*</span></label>
-          <input type="text" id="customer" placeholder="姓名或班級簡稱">
-          <div class="field-err" id="err-customer">請填寫客戶名</div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">
+          <div class="section-badge">02</div>
+          <span class="section-title">印刷項目</span>
+          <span class="section-hint">可新增多筆</span>
         </div>
-        <div class="field">
-          <label>取件時間 <span class="req">*</span></label>
-          <input type="date" id="pickup">
-          <div class="field-err" id="err-pickup">請選擇取件時間</div>
+        <div class="section-body">
+          <div class="items-list" id="items-list"></div>
+          <button type="button" class="add-item-btn" onclick="addItem()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            新增印刷項目
+          </button>
         </div>
       </div>
-    </div>
 
-    <div class="section">
-      <div class="section-head"><div class="section-icon">📄</div><span class="section-title">印刷項目</span>
-        <span style="margin-left:auto;font-size:11px;color:var(--ink3)">可新增多筆</span></div>
-      <div class="section-body">
-        <div class="items-list" id="items-list"></div>
-        <button type="button" class="add-item-btn" onclick="addItem()"><span style="font-size:16px">＋</span> 新增印刷項目</button>
+      <div class="section">
+        <div class="section-head">
+          <div class="section-badge">03</div>
+          <span class="section-title">備註</span>
+        </div>
+        <div class="section-body">
+          <textarea id="note" placeholder="急件說明、特殊需求等…"></textarea>
+        </div>
       </div>
-    </div>
 
-    <div class="section">
-      <div class="section-head"><div class="section-icon">💬</div><span class="section-title">備註</span></div>
-      <div class="section-body"><textarea id="note" placeholder="急件說明、特殊需求等…"></textarea></div>
-    </div>
-
-    <div class="submit-wrap">
-      <button type="button" class="submit-btn" id="submit-btn" onclick="submitOrder()">確認送出訂單</button>
-      <p class="submit-note">送出時會上傳檔案，請耐心等候，勿重複點擊</p>
-    </div>
-  </form>
+      <div class="submit-wrap">
+        <button type="button" class="submit-btn" id="submit-btn" onclick="submitOrder()">確認送出訂單</button>
+        <p class="submit-note">送出時會上傳檔案，請耐心等候，勿重複點擊</p>
+      </div>
+    </form>
+  </div>
 </main>
 
 <script>
@@ -189,7 +407,7 @@ function addItem(){
   itemCounter++;const id=itemCounter;
   const div=document.createElement('div');div.className='item-card';div.id='item-'+id;
   div.innerHTML=`
-    <div class="item-header"><span class="item-num">ITEM #${String(id).padStart(2,'0')}</span>
+    <div class="item-header"><span class="item-num">ITEM ${String(id).padStart(2,'0')}</span>
       <button type="button" class="item-del" onclick="delItem(${id})">✕</button></div>
     <div class="item-body">
       <div class="field"><label>檔案名稱 <span class="req">*</span></label><input type="text" id="name-${id}" placeholder="請輸入檔案名稱" oninput="updatePrice(${id})"></div>
@@ -227,7 +445,7 @@ function updatePrice(id){
   const pages=document.getElementById('pages-'+id)?.value;
   const chip=document.getElementById('price-'+id);if(!chip)return;
   const r=calcPrice(type,pages||1,qty);
-  if(r&&r.total>0){chip.innerHTML=`預估：<span class="amount">NT$ ${r.total.toLocaleString()}</span>　（${r.sheets}張/份 × $${r.unit}/份）`;chip.classList.add('show')}
+  if(r&&r.total>0){chip.innerHTML=`<div><div class="amount">NT$ ${r.total.toLocaleString()}</div><div class="detail">${r.sheets} 張/份 × $${r.unit}/份</div></div>`;chip.classList.add('show')}
   else chip.classList.remove('show');
 }
 function showErr(id){document.getElementById('err-'+id)?.classList.add('show')}
@@ -258,6 +476,9 @@ async function submitOrder(){
   formData.append('note',document.getElementById('note').value.trim());
 
   const items=[];
+  const coverIndexes=[];
+  const innerIndexes=[];
+  let itemPos=0;
   document.querySelectorAll('.item-card').forEach(card=>{
     const id=card.id.replace('item-','');
     items.push({
@@ -268,16 +489,19 @@ async function submitOrder(){
     });
     const coverInput=document.getElementById('cover-'+id);
     const innerInput=document.getElementById('inner-'+id);
-    if(coverInput?.files[0])formData.append('coverFiles',coverInput.files[0]);
-    if(innerInput?.files[0])formData.append('innerFiles',innerInput.files[0]);
+    if(coverInput?.files[0]){formData.append('coverFiles',coverInput.files[0]);coverIndexes.push(itemPos);}
+    if(innerInput?.files[0]){formData.append('innerFiles',innerInput.files[0]);innerIndexes.push(itemPos);}
+    itemPos++;
   });
   formData.append('items',JSON.stringify(items));
+  formData.append('coverIndexes',JSON.stringify(coverIndexes));
+  formData.append('innerIndexes',JSON.stringify(innerIndexes));
 
   try{
     const res=await fetch('/api/order',{method:'POST',body:formData});
     const data=await res.json();
     if(data.success){
-      document.getElementById('order-form').style.display='none';
+      document.getElementById('form-wrap').style.display='none';
       document.getElementById('success-screen').style.display='block';
       document.getElementById('order-ref').textContent='訂單編號：'+data.orderId+'　總額：NT$'+data.grandTotal.toLocaleString();
       window.scrollTo({top:0,behavior:'smooth'});
