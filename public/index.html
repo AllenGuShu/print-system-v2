@@ -93,7 +93,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
       <span class="header-title">印刷下單系統</span>
       <span class="header-sub">填單即送出 · 檔案直送印刷廠</span>
     </div>
-    <span class="header-tag">v2.2</span>
+    <span class="header-tag">v2.3</span>
   </div>
 </header>
 
@@ -286,6 +286,7 @@ function validate(){
 }
 async function submitOrder(){
   if(!validate())return;
+  saveMemory();
   const btn=document.getElementById('submit-btn');
   btn.disabled=true;btn.innerHTML='<span class="spin"></span>上傳中，請稍候…';
 
@@ -333,6 +334,26 @@ async function submitOrder(){
     btn.disabled=false;btn.innerHTML='確認送出訂單';
   }
 }
+// ── 記住上一筆的教室/老師/Email ──
+function restoreMemory(){
+  try{
+    const saved = JSON.parse(localStorage.getItem('printOrderMemory')||'{}');
+    if(saved.room)document.getElementById('room').value=saved.room;
+    if(saved.teacher)document.getElementById('teacher').value=saved.teacher;
+    if(saved.teacherEmail)document.getElementById('teacherEmail').value=saved.teacherEmail;
+  }catch(e){}
+}
+function saveMemory(){
+  try{
+    localStorage.setItem('printOrderMemory', JSON.stringify({
+      room: document.getElementById('room').value,
+      teacher: document.getElementById('teacher').value,
+      teacherEmail: document.getElementById('teacherEmail').value,
+    }));
+  }catch(e){}
+}
+restoreMemory();
+
 addItem();
 </script>
 </body>
