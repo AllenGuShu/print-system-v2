@@ -151,14 +151,15 @@ function render(){
     const fileLinks=[...(o.coverLinks||[]).map((l,i)=>`<a href="${l}" target="_blank">📂封面${i+1}</a>`),...(o.innerLinks||[]).map((l,i)=>`<a href="${l}" target="_blank">📄內頁${i+1}</a>`)].join(' ');
     const det=(o.items||[]).map((x,i)=>`<div>${i+1}. ${x.name} / ${x.type} / ${x.qty}份${x.pages?' / '+x.pages+'頁':''} <span style="color:var(--green)">$${(x.total||0).toLocaleString()}</span></div>`).join('')+(fileLinks?`<div style="margin-top:4px">${fileLinks}</div>`:'');
     const tr=document.createElement('tr');
+    if(o.hasReviewNeeded) tr.style.background='rgba(224,104,92,.06)';
     tr.innerHTML=`
-      <td><div class="oid">${(o.orderId||'').slice(-8)}</div></td>
+      <td><div class="oid">${(o.orderId||'').slice(-8)}</div>${o.hasReviewNeeded?'<div style="color:var(--red);font-size:10px;font-weight:600;margin-top:2px">⚠ 需確認</div>':''}</td>
       <td style="color:var(--ink2);font-size:12px;white-space:nowrap">${ds}</td>
       <td><div style="font-weight:500">${o.customer||'—'}</div><div style="font-size:12px;color:var(--ink3)">${o.teacher||''}</div></td>
       <td><span class="badge bb">${o.room||'—'}</span></td>
       <td>${soon?`<span class="badge ba">${pk}</span>`:pk}</td>
       <td><button class="dtog" onclick="tog(this)">▶ ${(o.items||[]).length} 項</button><div class="ddet">${det}</div></td>
-      <td><span class="amt">$${(o.grandTotal||0).toLocaleString()}</span></td>`;
+      <td>${o.hasReviewNeeded?'<span style="color:var(--red);font-size:12px;font-weight:600">部分待確認</span>':`<span class="amt">$${(o.grandTotal||0).toLocaleString()}</span>`}</td>`;
     tbody.appendChild(tr);
   });
 }
