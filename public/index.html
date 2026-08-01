@@ -284,44 +284,76 @@ function validate(){
   });
   return ok;
 }
+// Apps Script Web App 網址（檔案直接上傳到這裡，不經過 Vercel）
+const APPS_SCRIPT_UPLOAD_URL = 'https://script.google.com/macros/s/AKfycbwwo1QJhp7g59m8-oVApgXfGBDN1mj60_njoQ95njxuvWgH7jTffTcJbwLK5fr5gVI3/exec';
+
+function fileToBase64(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>resolve(reader.result.split(',')[1]);
+    reader.onerror=reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadFileDirectly(file, itemName, pickup){
+  const base64Data = await fileToBase64(file);
+  const res = await fetch(APPS_SCRIPT_UPLOAD_URL, {
+    method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'}, // 避免預檢請求(preflight)造成CORS問題
+    body: JSON.stringify({
+      action:'upload', fileName:file.name, mimeType:file.type||'application/octet-stream',
+      base64Data, itemName, pickup
+    }),
+  });
+  const data = await res.json();
+  if(!data.success) throw new Error('檔案上傳失敗：'+(data.error||'未知錯誤'));
+  return data.url;
+}
+
 async function submitOrder(){
   if(!validate())return;
   saveMemory();
   const btn=document.getElementById('submit-btn');
-  btn.disabled=true;btn.innerHTML='<span class="spin"></span>上傳中，請稍候…';
+  btn.disabled=true;btn.innerHTML='<span class="spin"></span>上傳檔案中…';
 
-  const formData=new FormData();
-  formData.append('room',document.getElementById('room').value);
-  formData.append('teacher',document.getElementById('teacher').value.trim());
-  formData.append('teacherEmail',document.getElementById('teacherEmail').value.trim());
-  formData.append('customer',document.getElementById('customer').value.trim());
-  formData.append('pickup',document.getElementById('pickup').value);
-  formData.append('note',document.getElementById('note').value.trim());
-
-  const items=[];
-  const coverIndexes=[];
-  const innerIndexes=[];
-  let itemPos=0;
-  document.querySelectorAll('.item-card').forEach(card=>{
-    const id=card.id.replace('item-','');
-    items.push({
-      name:document.getElementById('name-'+id)?.value||'',
-      type:document.getElementById('type-'+id)?.value||'',
-      qty:+(document.getElementById('qty-'+id)?.value)||0,
-      pages:+(document.getElementById('pages-'+id)?.value)||0,
-    });
-    const coverInput=document.getElementById('cover-'+id);
-    const innerInput=document.getElementById('inner-'+id);
-    if(coverInput?.files[0]){formData.append('coverFiles',coverInput.files[0]);coverIndexes.push(itemPos);}
-    if(innerInput?.files[0]){formData.append('innerFiles',innerInput.files[0]);innerIndexes.push(itemPos);}
-    itemPos++;
-  });
-  formData.append('items',JSON.stringify(items));
-  formData.append('coverIndexes',JSON.stringify(coverIndexes));
-  formData.append('innerIndexes',JSON.stringify(innerIndexes));
+  const room=document.getElementById('room').value;
+  const teacher=document.getElementById('teacher').value.trim();
+  const teacherEmail=document.getElementById('teacherEmail').value.trim();
+  const customer=document.getElementById('customer').value.trim();
+  const pickup=document.getElementById('pickup').value;
+  const note=document.getElementById('note').value.trim();
 
   try{
-    const res=await fetch('/api/order',{method:'POST',body:formData});
+    // ── 步驟一：逐項目直接上傳檔案到 Apps Script（不經過 Vercel，避免逾時）──
+    const items=[];
+    const cards=[...document.querySelectorAll('.item-card')];
+    for(let i=0;i<cards.length;i++){
+      const card=cards[i];
+      const id=card.id.replace('item-','');
+      const name=document.getElementById('name-'+id)?.value||'';
+      const type=document.getElementById('type-'+id)?.value||'';
+      const qty=+(document.getElementById('qty-'+id)?.value)||0;
+      const pages=+(document.getElementById('pages-'+id)?.value)||0;
+
+      btn.innerHTML=`<span class="spin"></span>上傳第 ${i+1}/${cards.length} 項檔案…`;
+
+      const coverInput=document.getElementById('cover-'+id);
+      const innerInput=document.getElementById('inner-'+id);
+      let coverLink='', innerLink='';
+      if(coverInput?.files[0]) coverLink = await uploadFileDirectly(coverInput.files[0], name, pickup);
+      if(innerInput?.files[0]) innerLink = await uploadFileDirectly(innerInput.files[0], name, pickup);
+
+      items.push({ name, type, qty, pages, coverLink, innerLink });
+    }
+
+    // ── 步驟二：把訂單資料（純文字，不含檔案）送給 Vercel，快速處理 ──
+    btn.innerHTML='<span class="spin"></span>送出訂單中…';
+    const res=await fetch('/api/order',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ room, teacher, teacherEmail, customer, pickup, note, items }),
+    });
     const data=await res.json();
     if(data.success){
       document.getElementById('form-wrap').style.display='none';
