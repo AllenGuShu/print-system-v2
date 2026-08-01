@@ -30,10 +30,13 @@ export default async function handler(req, res) {
     const rows = (resp.data.values || []).filter(r => r[0] && r[0] !== '訂單編號');
     const orderMap = new Map();
 
+    // 新欄位順序：A訂單編號 B時間 C客戶 D教室 E教師 F取件 G檔名 H類型 I數量 J頁數
+    //             K封面檔 L內頁檔 M備註 N需確認 O實際張數 P紙單價 Q單本金額 R總金額
     rows.forEach(r => {
-      const [orderId, timestamp, customer, teacher, room, pickup,
-             itemName, itemType, itemQty, itemPages, sheetsN, rate, unit, total,
-             coverLinks, innerLinks, note, needsReview] = r;
+      const [orderId, timestamp, customer, room, teacher, pickup,
+             itemName, itemType, itemQty, itemPages,
+             coverLinks, innerLinks, note, needsReview,
+             sheetsN, rate, unit, total] = r;
       if (!orderMap.has(orderId)) {
         orderMap.set(orderId, {
           orderId, timestamp, customer, room, teacher, pickup, note,
