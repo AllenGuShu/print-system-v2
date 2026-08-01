@@ -102,13 +102,14 @@ export default async function handler(req, res) {
     const allInnerLinks = calculatedItems.flatMap(i => i.innerLinks);
     const sheetUrl = `https://docs.google.com/spreadsheets/d/${process.env.GOOGLE_SHEET_ID}`;
 
-    // 這兩個寄信呼叫不用 await 完整等待，用 Promise.allSettled 背景處理即可
-    Promise.allSettled([
+    // ⚠️ 重要：Vercel回應送出後會凍結執行環境，背景任務不會真正完成
+    // 所以這裡改成「等待寄信完成」再回應，確保信件真的送出
+    await Promise.allSettled([
       sendAdminNotification({ orderId, timestamp, customer, room, teacher, pickup, note, items: calculatedItems, grandTotal, hasReviewNeeded, coverLinks: allCoverLinks, innerLinks: allInnerLinks, sheetUrl }),
       (teacherEmail && teacherEmail.includes('@'))
         ? sendTeacherConfirmation({ orderId, teacherEmail, teacher, room, customer, pickup, note, items: calculatedItems })
         : Promise.resolve(),
-    ]).catch(() => {});
+    ]);
 
     return res.status(200).json({ success: true, orderId });
 
