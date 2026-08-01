@@ -1,13 +1,9 @@
-// api/order.js — v4: Gmail寄信 + 異常標記 + 防重複送出
+// api/order.js — v5: 不再處理檔案上傳（檔案已由瀏覽器直接上傳到 Apps Script）
+// 這支 API 只負責：計算金額、寫入 Sheet、觸發寄信（透過 Apps Script）
+// 因為不含檔案處理，執行速度極快，不會逾時
 import { google } from 'googleapis';
-import formidable from 'formidable';
-import fs from 'fs';
 import crypto from 'crypto';
 import { calcPrice } from '../lib/pricing.js';
-
-export const config = {
-  api: { bodyParser: false },
-};
 
 const APPS_SCRIPT_URL = process.env.APPS_SCRIPT_URL;
 
@@ -19,25 +15,11 @@ async function getAuth() {
   });
 }
 
-async function uploadViaAppsScript(filePath, fileName, mimeType, itemName, pickup) {
-  const fileBuffer = fs.readFileSync(filePath);
-  const base64Data = fileBuffer.toString('base64');
-  const res = await fetch(APPS_SCRIPT_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'upload', fileName, mimeType, base64Data, itemName, pickup }),
-    redirect: 'follow',
-  });
-  const data = await res.json();
-  if (!data.success) throw new Error('檔案上傳失敗: ' + data.error);
-  return data.url;
-}
-
 async function sendEmailViaAppsScript(payload) {
   try {
     await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ action: 'sendEmail', ...payload }),
       redirect: 'follow',
     });
@@ -46,21 +28,9 @@ async function sendEmailViaAppsScript(payload) {
   }
 }
 
-function parseForm(req) {
-  return new Promise((resolve, reject) => {
-    const form = formidable({ multiples: false, maxFileSize: 50 * 1024 * 1024 });
-    form.parse(req, (err, fields, files) => {
-      if (err) reject(err);
-      else resolve({ fields, files });
-    });
-  });
-}
-
-// 用訂單內容產生指紋，5分鐘內同樣內容視為重複送出
-const recentSubmissions = new Map(); // 記憶體內快取（Vercel serverless 重啟會清空，但同一個實例內有效）
-
-function getSubmissionHash(room, teacher, customer, pickup, itemsRaw) {
-  return crypto.createHash('sha256').update(`${room}|${teacher}|${customer}|${pickup}|${itemsRaw}`).digest('hex');
+const recentSubmissions = new Map();
+function getSubmissionHash(room, teacher, customer, pickup, itemsStr) {
+  return crypto.createHash('sha256').update(`${room}|${teacher}|${customer}|${pickup}|${itemsStr}`).digest('hex');
 }
 
 export default async function handler(req, res) {
@@ -71,80 +41,43 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { fields, files } = await parseForm(req);
-    const get = (f) => Array.isArray(f) ? f[0] : f;
+    const { room, teacher, teacherEmail, customer, pickup, note, items } = req.body;
 
-    const room        = get(fields.room);
-    const teacher      = get(fields.teacher);
-    const teacherEmail = get(fields.teacherEmail) || '';
-    const customer     = get(fields.customer);
-    const pickup       = get(fields.pickup);
-    const note         = get(fields.note) || '';
-    const itemsRaw     = get(fields.items);
-    const items = JSON.parse(itemsRaw);
+    if (!room || !teacher || !customer || !pickup || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ success: false, error: '缺少必要欄位' });
+    }
 
     // ── 防止重複送出 ──
-    const hash = getSubmissionHash(room, teacher, customer, pickup, itemsRaw);
+    const itemsStr = JSON.stringify(items.map(i => ({ name: i.name, type: i.type, qty: i.qty, pages: i.pages })));
+    const hash = getSubmissionHash(room, teacher, customer, pickup, itemsStr);
     const now = Date.now();
-    // 清除5分鐘前的舊紀錄
-    for (const [key, ts] of recentSubmissions.entries()) {
-      if (now - ts > 5 * 60 * 1000) recentSubmissions.delete(key);
+    for (const [key, v] of recentSubmissions.entries()) {
+      if (now - v.ts > 5 * 60 * 1000) recentSubmissions.delete(key);
     }
     if (recentSubmissions.has(hash)) {
-      return res.status(200).json({
-        success: true,
-        orderId: recentSubmissions.get(hash).orderId,
-        duplicate: true,
-      });
+      return res.status(200).json({ success: true, orderId: recentSubmissions.get(hash).orderId, duplicate: true });
     }
 
     const orderId = `ORD-${Date.now()}`;
     recentSubmissions.set(hash, { orderId, ts: now });
 
-    const coverFileList = files.coverFiles ? (Array.isArray(files.coverFiles) ? files.coverFiles : [files.coverFiles]) : [];
-    const innerFileList = files.innerFiles ? (Array.isArray(files.innerFiles) ? files.innerFiles : [files.innerFiles]) : [];
-
-    const coverIndexRaw = get(fields.coverIndexes);
-    const innerIndexRaw = get(fields.innerIndexes);
-    const coverIndexes = coverIndexRaw ? JSON.parse(coverIndexRaw) : [];
-    const innerIndexes = innerIndexRaw ? JSON.parse(innerIndexRaw) : [];
-
+    // ── 計算金額 ──
     let grandTotal = 0;
     let hasReviewNeeded = false;
-    const calculatedItems = [];
-
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
+    const calculatedItems = items.map(item => {
       const result = calcPrice(item.type, item.pages, item.qty);
       grandTotal += result.total;
       if (result.needsReview) hasReviewNeeded = true;
-
-      const itemCoverLinks = [];
-      const itemInnerLinks = [];
-
-      const coverPos = coverIndexes.indexOf(i);
-      if (coverPos !== -1 && coverFileList[coverPos]) {
-        const f = coverFileList[coverPos];
-        const link = await uploadViaAppsScript(f.filepath, `封面_${f.originalFilename}`, f.mimetype, item.name, pickup);
-        itemCoverLinks.push(link);
-      }
-      const innerPos = innerIndexes.indexOf(i);
-      if (innerPos !== -1 && innerFileList[innerPos]) {
-        const f = innerFileList[innerPos];
-        const link = await uploadViaAppsScript(f.filepath, `內頁_${f.originalFilename}`, f.mimetype, item.name, pickup);
-        itemInnerLinks.push(link);
-      }
-
-      calculatedItems.push({
+      return {
         ...item, ...result,
-        coverLinks: itemCoverLinks,
-        innerLinks: itemInnerLinks,
-      });
-    }
+        coverLinks: item.coverLink ? [item.coverLink] : [],
+        innerLinks: item.innerLink ? [item.innerLink] : [],
+      };
+    });
 
     const timestamp = new Date().toISOString();
 
-    // 寫入 Google Sheet（needsReview 欄位一起記錄）
+    // ── 寫入 Google Sheet ──
     const auth = await getAuth();
     const sheets = google.sheets({ version: 'v4', auth });
 
@@ -163,24 +96,18 @@ export default async function handler(req, res) {
       requestBody: { values: rows },
     });
 
-    // 寄 email 給你/印刷負責人
+    // ── 寄信（不等待完成，讓 API 快速回應）──
     const allCoverLinks = calculatedItems.flatMap(i => i.coverLinks);
     const allInnerLinks = calculatedItems.flatMap(i => i.innerLinks);
+    const sheetUrl = `https://docs.google.com/spreadsheets/d/${process.env.GOOGLE_SHEET_ID}`;
 
-    await sendAdminNotification({
-      orderId, timestamp, customer, room, teacher, pickup, note,
-      items: calculatedItems, grandTotal, hasReviewNeeded,
-      coverLinks: allCoverLinks, innerLinks: allInnerLinks,
-      sheetUrl: `https://docs.google.com/spreadsheets/d/${process.env.GOOGLE_SHEET_ID}`,
-    });
-
-    // 寄 email 給老師本人
-    if (teacherEmail && teacherEmail.includes('@')) {
-      await sendTeacherConfirmation({
-        orderId, teacherEmail, teacher, room, customer, pickup, note,
-        items: calculatedItems,
-      });
-    }
+    // 這兩個寄信呼叫不用 await 完整等待，用 Promise.allSettled 背景處理即可
+    Promise.allSettled([
+      sendAdminNotification({ orderId, timestamp, customer, room, teacher, pickup, note, items: calculatedItems, grandTotal, hasReviewNeeded, coverLinks: allCoverLinks, innerLinks: allInnerLinks, sheetUrl }),
+      (teacherEmail && teacherEmail.includes('@'))
+        ? sendTeacherConfirmation({ orderId, teacherEmail, teacher, room, customer, pickup, note, items: calculatedItems })
+        : Promise.resolve(),
+    ]).catch(() => {});
 
     return res.status(200).json({ success: true, orderId });
 
@@ -237,9 +164,7 @@ async function sendAdminNotification({ orderId, timestamp, customer, room, teach
 
   const plain = `【印刷新訂單】\n訂單：${orderId}\n教室：${room}\n教師：${teacher}\n客戶：${customer}\n取件：${pickup}\n總額：${hasReviewNeeded?'部分待確認':'NT$'+grandTotal.toLocaleString()}`;
 
-  await sendEmailViaAppsScript({
-    emailType: 'admin', subject, htmlBody: html, plainBody: plain,
-  });
+  await sendEmailViaAppsScript({ emailType: 'admin', subject, htmlBody: html, plainBody: plain });
 }
 
 async function sendTeacherConfirmation({ orderId, teacherEmail, teacher, room, customer, pickup, note, items }) {
@@ -273,8 +198,5 @@ async function sendTeacherConfirmation({ orderId, teacherEmail, teacher, room, c
 
   const plain = `【下單確認】\n訂單：${orderId}\n教室：${room}\n取件：${pickup}`;
 
-  await sendEmailViaAppsScript({
-    emailType: 'teacher', teacherEmail, subject: `【下單確認】您的印刷訂單已送出 — ${room}`,
-    htmlBody: html, plainBody: plain,
-  });
+  await sendEmailViaAppsScript({ emailType: 'teacher', teacherEmail, subject: `【下單確認】您的印刷訂單已送出 — ${room}`, htmlBody: html, plainBody: plain });
 }
