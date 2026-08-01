@@ -5,7 +5,7 @@
   ],
   "functions": {
     "api/order.js": {
-      "maxDuration": 30
+      "maxDuration": 60
     }
   }
 }
