@@ -81,12 +81,13 @@ export default async function handler(req, res) {
     const auth = await getAuth();
     const sheets = google.sheets({ version: 'v4', auth });
 
+    // 欄位順序：印刷用資訊在前，價格資訊(實際張數/紙單價/單本金額/總金額)移到最後
     const rows = calculatedItems.map(item => [
       orderId, timestamp, customer, room, teacher, pickup,
       item.name, item.type, item.qty, item.pages || '',
-      item.sheets, item.rate, item.unit, item.total,
       item.coverLinks.join(' | '), item.innerLinks.join(' | '), note,
       item.needsReview ? '⚠需確認：' + (item.reviewReason || '') : '',
+      item.sheets, item.rate, item.unit, item.total,
     ]);
 
     await sheets.spreadsheets.values.append({
