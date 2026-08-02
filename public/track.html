@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>查詢訂單 — 印刷下單系統</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;500;700&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --plate:      #14171A;
+  --plate2:     #1B1F23;
+  --panel:      #21262B;
+  --panel-lt:   #2A3037;
+  --steel:      #3A414A;
+  --steel-lt:   #4A525C;
+  --ink:        #E8E6DF;
+  --ink2:       #9CA3AB;
+  --ink3:       #676E76;
+  --safety:     #E8A317;
+  --safety-dim: rgba(232,163,23,.14);
+  --press-red:  #C4402F;
+  --press-red-dim: rgba(196,64,47,.14);
+  --gauge-green:#5A9B6E;
+  --gauge-green-dim: rgba(90,155,110,.14);
+  --line:       rgba(232,230,223,.09);
+  --line-strong:rgba(232,230,223,.16);
+  --r4:4px; --r8:8px; --r12:12px;
+}
+
+html{scroll-behavior:smooth}
+body{
+  font-family:'Noto Sans TC',sans-serif;
+  background:
+    radial-gradient(ellipse 1200px 600px at 20% -10%, rgba(232,163,23,.05), transparent 60%),
+    radial-gradient(ellipse 900px 500px at 100% 110%, rgba(196,64,47,.04), transparent 55%),
+    repeating-linear-gradient(135deg, rgba(255,255,255,.012) 0px, rgba(255,255,255,.012) 1px, transparent 1px, transparent 3px),
+    var(--plate);
+  color:var(--ink);
+  min-height:100vh;
+  padding-bottom:70px;
+  -webkit-font-smoothing:antialiased;
+}
+
+.site-header{
+  background:linear-gradient(180deg, var(--panel-lt), var(--panel));
+  border-bottom:3px solid var(--steel);
+  box-shadow:0 4px 18px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.04);
+  padding:0 20px;
+  position:sticky; top:0; z-index:100;
+}
+.header-inner{
+  max-width:660px; margin:0 auto; height:68px;
+  display:flex; align-items:center; gap:16px;
+}
+.press-mark{
+  width:44px; height:44px; flex-shrink:0;
+  background:linear-gradient(155deg, var(--steel-lt), var(--steel) 60%);
+  border-radius:var(--r8);
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12), inset 0 -2px 4px rgba(0,0,0,.35), 0 2px 6px rgba(0,0,0,.4);
+  display:flex; align-items:center; justify-content:center;
+  position:relative;
+}
+.press-mark::after{
+  content:'';
+  position:absolute; inset:5px;
+  border:1px solid rgba(232,163,23,.35);
+  border-radius:5px;
+}
+.press-mark svg{width:22px;height:22px;position:relative;z-index:1}
+.header-text{display:flex; flex-direction:column; gap:2px}
+.header-title{
+  font-family:'Oswald',sans-serif;
+  font-size:17px; font-weight:600; letter-spacing:.04em; color:var(--ink);
+  text-transform:uppercase;
+}
+.header-sub{
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px; color:var(--ink3); letter-spacing:.06em;
+}
+.header-right{margin-left:auto}
+.nav-link{
+  font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink2);
+  text-decoration:none; letter-spacing:.04em; text-transform:uppercase;
+  padding:8px 14px; border:1px solid var(--line-strong); border-radius:var(--r8);
+  transition:all .15s;
+}
+.nav-link:hover{border-color:var(--safety); color:var(--safety)}
+
+.main{max-width:660px; margin:0 auto; padding:26px 16px 0}
+
+.intro{padding:2px 4px 20px}
+.intro-eyebrow{
+  font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--safety);
+  letter-spacing:.12em; text-transform:uppercase; margin-bottom:8px;
+  display:flex; align-items:center; gap:8px;
+}
+.intro-eyebrow::before{content:'';width:16px;height:1px;background:var(--safety)}
+.intro h1{
+  font-family:'Oswald',sans-serif; font-size:24px; font-weight:600; color:var(--ink);
+  letter-spacing:.01em; margin-bottom:8px; text-transform:uppercase;
+}
+.intro p{font-size:12.5px; color:var(--ink2); line-height:1.65}
+
+.section{
+  background:linear-gradient(180deg, var(--panel-lt), var(--panel));
+  border:1px solid var(--line-strong);
+  border-radius:var(--r12);
+  overflow:hidden;
+  margin-bottom:14px;
+  box-shadow:0 3px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
+}
+.section-body{padding:22px}
+
+label{
+  display:flex; align-items:center; gap:5px;
+  font-family:'JetBrains Mono',monospace; font-size:10.5px; font-weight:500; color:var(--ink2);
+  margin-bottom:8px; letter-spacing:.04em; text-transform:uppercase;
+}
+
+.search-row{display:flex; gap:10px}
+input[type=text]{
+  flex:1; padding:12px 14px; font-size:15px; font-family:'JetBrains Mono',monospace;
+  color:var(--ink); background:var(--plate);
+  border:1px solid var(--line-strong);
+  border-radius:var(--r8);
+  outline:none;
+  box-shadow:inset 0 2px 4px rgba(0,0,0,.3);
+  transition:border-color .15s, box-shadow .15s;
+  letter-spacing:.02em;
+}
+input:focus{
+  border-color:var(--safety);
+  box-shadow:inset 0 2px 4px rgba(0,0,0,.3), 0 0 0 3px var(--safety-dim);
+}
+input::placeholder{color:var(--ink3); font-family:'Noto Sans TC',sans-serif}
+
+.search-btn{
+  padding:12px 24px;
+  background:linear-gradient(180deg, #E8A317, #C4870E);
+  color:#1A1204; border:none;
+  border-radius:var(--r8); font-size:14px; font-weight:700;
+  font-family:'Oswald',sans-serif; letter-spacing:.04em; text-transform:uppercase;
+  cursor:pointer;
+  box-shadow:0 3px 12px rgba(232,163,23,.28), inset 0 1px 0 rgba(255,255,255,.35);
+  transition:filter .15s, transform .1s;
+  white-space:nowrap;
+}
+.search-btn:hover{filter:brightness(1.08); transform:translateY(-1px)}
+.search-btn:disabled{background:var(--steel); color:var(--ink3); cursor:not-allowed}
+
+.search-hint{
+  font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--ink3);
+  margin-top:10px; letter-spacing:.02em;
+}
+
+/* ── Result card ── */
+#result{display:none; margin-top:16px}
+.result-card{
+  background:linear-gradient(180deg, var(--panel-lt), var(--panel));
+  border:1px solid var(--line-strong); border-radius:var(--r12);
+  overflow:hidden;
+  box-shadow:0 3px 14px rgba(0,0,0,.35);
+}
+.result-head{
+  padding:16px 20px; background:linear-gradient(180deg, rgba(90,155,110,.08), transparent);
+  border-bottom:1px solid var(--line);
+  display:flex; align-items:center; gap:10px;
+}
+.result-head .check{
+  width:28px; height:28px; border-radius:50%;
+  background:var(--gauge-green-dim); border:1.5px solid var(--gauge-green);
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.result-oid{
+  font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--gauge-green); font-weight:700;
+}
+.result-body{padding:18px 20px}
+.meta-grid{
+  display:grid; grid-template-columns:1fr 1fr; gap:10px 20px;
+  margin-bottom:16px; padding-bottom:16px; border-bottom:1px solid var(--line);
+}
+.meta-item .meta-label{
+  font-family:'JetBrains Mono',monospace; font-size:9.5px; color:var(--ink3);
+  text-transform:uppercase; letter-spacing:.05em; margin-bottom:3px;
+}
+.meta-item .meta-value{font-size:13.5px; color:var(--ink)}
+
+.item-row{
+  padding:12px 0; border-bottom:1px solid var(--line);
+}
+.item-row:last-child{border-bottom:none}
+.item-row-name{font-size:13.5px; font-weight:500; color:var(--ink); margin-bottom:4px}
+.item-row-type{
+  font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--safety);
+  margin-bottom:6px; letter-spacing:.02em;
+}
+.item-row-meta{
+  font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink2);
+  display:flex; gap:14px;
+}
+.item-links{display:flex; gap:8px; margin-top:8px}
+.item-links a{
+  font-size:11px; color:var(--ink2); text-decoration:none;
+  padding:5px 10px; border:1px solid var(--line-strong); border-radius:var(--r4);
+  transition:all .15s;
+}
+.item-links a:hover{border-color:var(--safety); color:var(--safety)}
+
+.note-box{
+  margin-top:14px; padding:12px 14px; background:var(--plate);
+  border-radius:var(--r8); border:1px solid var(--line);
+  font-size:12px; color:var(--ink2); line-height:1.6;
+}
+
+/* ── Not found ── */
+.not-found{
+  text-align:center; padding:40px 20px;
+  font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--ink3);
+}
+.not-found .icon{font-size:32px; margin-bottom:12px; opacity:.5}
+
+.spin{
+  display:inline-block; width:13px; height:13px; border:2px solid rgba(0,0,0,.25);
+  border-top-color:#1A1204; border-radius:50%; animation:rotate .6s linear infinite;
+  vertical-align:middle; margin-right:6px;
+}
+@keyframes rotate{to{transform:rotate(360deg)}}
+
+@media(max-width:480px){
+  .meta-grid{grid-template-columns:1fr}
+  .search-row{flex-direction:column}
+  .header-inner{height:60px}
+  .header-title{font-size:15px}
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="press-mark">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v7H6v-7z" stroke="#E8A317" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="header-text">
+      <span class="header-title">查詢訂單</span>
+      <span class="header-sub">PRESS-CTRL // ORDER LOOKUP</span>
+    </div>
+    <div class="header-right">
+      <a href="/" class="nav-link">← 返回下單</a>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+  <div class="intro">
+    <div class="intro-eyebrow">Order Lookup</div>
+    <h1>查詢我的訂單</h1>
+    <p>輸入訂單編號，即可查看該筆訂單的詳細內容與檔案連結</p>
+  </div>
+
+  <div class="section">
+    <div class="section-body">
+      <label>訂單編號</label>
+      <div class="search-row">
+        <input type="text" id="orderIdInput" placeholder="例：ORD-1785588264063" onkeydown="if(event.key==='Enter')doSearch()">
+        <button class="search-btn" id="search-btn" onclick="doSearch()">查詢</button>
+      </div>
+      <p class="search-hint">訂單編號可在下單成功畫面或確認信中找到</p>
+    </div>
+  </div>
+
+  <div id="result"></div>
+</main>
+
+<script>
+async function doSearch(){
+  const input = document.getElementById('orderIdInput');
+  const btn = document.getElementById('search-btn');
+  const orderId = input.value.trim();
+  const resultDiv = document.getElementById('result');
+
+  if(!orderId){
+    input.focus();
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span>查詢中';
+  resultDiv.style.display = 'none';
+
+  try{
+    const res = await fetch('/api/track?orderId=' + encodeURIComponent(orderId));
+    const data = await res.json();
+
+    if(data.success && data.order){
+      renderOrder(data.order);
+    }else{
+      renderNotFound();
+    }
+  }catch(e){
+    renderNotFound();
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '查詢';
+  resultDiv.style.display = 'block';
+}
+
+function renderOrder(order){
+  const resultDiv = document.getElementById('result');
+  const dt = new Date(order.timestamp);
+  const dtStr = isNaN(dt) ? order.timestamp : `${dt.getFullYear()}/${dt.getMonth()+1}/${dt.getDate()} ${dt.getHours()}:${String(dt.getMinutes()).padStart(2,'0')}`;
+
+  const itemsHtml = order.items.map((it,i) => `
+    <div class="item-row">
+      <div class="item-row-name">${i+1}. ${it.name}</div>
+      <div class="item-row-type">${it.type || '（未選擇類型）'}</div>
+      <div class="item-row-meta">
+        <span>數量 ${it.qty} 份</span>
+        <span>頁數 ${it.pages || '—'}</span>
+      </div>
+      ${(it.coverLinks.length || it.innerLinks.length) ? `
+      <div class="item-links">
+        ${it.coverLinks.map((l,j)=>`<a href="${l}" target="_blank">📂 封面檔${j+1}</a>`).join('')}
+        ${it.innerLinks.map((l,j)=>`<a href="${l}" target="_blank">📄 內頁檔${j+1}</a>`).join('')}
+      </div>` : ''}
+    </div>
+  `).join('');
+
+  resultDiv.innerHTML = `
+    <div class="result-card">
+      <div class="result-head">
+        <div class="check">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#5A9B6E" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <span class="result-oid">${order.orderId}</span>
+      </div>
+      <div class="result-body">
+        <div class="meta-grid">
+          <div class="meta-item"><div class="meta-label">客戶名</div><div class="meta-value">${order.customer||'—'}</div></div>
+          <div class="meta-item"><div class="meta-label">教室</div><div class="meta-value">${order.room||'—'}</div></div>
+          <div class="meta-item"><div class="meta-label">授課教師</div><div class="meta-value">${order.teacher||'—'}</div></div>
+          <div class="meta-item"><div class="meta-label">取件時間</div><div class="meta-value">${order.pickup||'—'}</div></div>
+          <div class="meta-item"><div class="meta-label">下單時間</div><div class="meta-value">${dtStr}</div></div>
+        </div>
+        ${itemsHtml}
+        ${order.note ? `<div class="note-box">備註：${order.note}</div>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+function renderNotFound(){
+  const resultDiv = document.getElementById('result');
+  resultDiv.innerHTML = `
+    <div class="not-found">
+      <div class="icon">🔍</div>
+      <div>查無此訂單編號，請確認輸入是否正確</div>
+    </div>
+  `;
+}
+</script>
+</body>
+</html>
