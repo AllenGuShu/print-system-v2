@@ -83,6 +83,13 @@ body{
   font-size:10px; color:var(--ink3); letter-spacing:.06em;
 }
 .header-right{margin-left:auto; display:flex; align-items:center; gap:10px}
+.nav-track-link{
+  font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink2);
+  text-decoration:none; letter-spacing:.04em; text-transform:uppercase;
+  padding:8px 14px; border:1px solid var(--line-strong); border-radius:var(--r8);
+  transition:all .15s;
+}
+.nav-track-link:hover{border-color:var(--safety); color:var(--safety)}
 .status-lamp{
   display:flex; align-items:center; gap:6px;
   font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--ink3);
@@ -334,7 +341,8 @@ textarea{resize:vertical; min-height:76px; line-height:1.6}
       <span class="header-title">印刷下單系統</span>
       <span class="header-sub">PRESS-CTRL // ORDER TERMINAL</span>
     </div>
-    <div class="header-right">
+    <div class="header-right" style="display:flex;align-items:center;gap:12px">
+      <a href="/track" class="nav-track-link">查詢訂單</a>
       <span class="status-lamp"><span class="dot"></span>Online</span>
     </div>
   </div>
