@@ -4,82 +4,301 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>印刷下單系統</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&family=Zen+Kaku+Gothic+New:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;500;700&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+/* ── 工業印刷機控制台配色 ── */
 :root{
-  --paper:#F4F6F8;--paper-deep:#EBEFF2;--white:#FFFFFF;--ink:#1B2430;--ink2:#56626F;--ink3:#94A0AC;
-  --line:#DDE3E8;--line2:#C9D1D8;--teal:#1D6E6B;--teal-deep:#14504E;--teal-tint:#E4F1F0;
-  --amber:#C97A2E;--amber-tint:#FBF0E2;--red:#C1443A;--red-tint:#FBEBEA;
-  --r6:6px;--r10:10px;--r14:14px;--r20:20px;--shadow-sm:0 1px 2px rgba(27,36,48,.06);--shadow-md:0 4px 16px rgba(27,36,48,.08);
+  --plate:      #14171A;
+  --plate2:     #1B1F23;
+  --panel:      #21262B;
+  --panel-lt:   #2A3037;
+  --steel:      #3A414A;
+  --steel-lt:   #4A525C;
+  --ink:        #E8E6DF;
+  --ink2:       #9CA3AB;
+  --ink3:       #676E76;
+  --safety:     #E8A317;
+  --safety-dim: rgba(232,163,23,.14);
+  --press-red:  #C4402F;
+  --press-red-dim: rgba(196,64,47,.14);
+  --gauge-green:#5A9B6E;
+  --gauge-green-dim: rgba(90,155,110,.14);
+  --line:       rgba(232,230,223,.09);
+  --line-strong:rgba(232,230,223,.16);
+  --r4:4px; --r8:8px; --r12:12px;
 }
+
 html{scroll-behavior:smooth}
-body{font-family:'Noto Sans TC',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;padding-bottom:64px;-webkit-font-smoothing:antialiased;
-  background-image:radial-gradient(circle at 15% 8%, rgba(29,110,107,.04) 0%, transparent 45%),radial-gradient(circle at 85% 92%, rgba(201,122,46,.04) 0%, transparent 45%)}
-.site-header{background:var(--white);border-bottom:1px solid var(--line);padding:0 20px;position:sticky;top:0;z-index:100}
-.header-inner{max-width:640px;margin:0 auto;height:64px;display:flex;align-items:center;gap:14px}
-.press-mark{width:38px;height:38px;flex-shrink:0;border-radius:var(--r10);background:var(--teal);display:flex;align-items:center;justify-content:center}
-.press-mark svg{width:20px;height:20px}
-.header-text{display:flex;flex-direction:column;gap:1px}
-.header-title{font-family:'Zen Kaku Gothic New',sans-serif;font-size:16px;font-weight:700;letter-spacing:.01em;color:var(--ink)}
-.header-sub{font-size:11px;color:var(--ink3);letter-spacing:.02em}
-.header-tag{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--teal);background:var(--teal-tint);padding:4px 9px;border-radius:20px;letter-spacing:.03em;font-weight:500}
-.main{max-width:640px;margin:0 auto;padding:28px 16px 0}
-.intro{padding:2px 4px 22px;text-align:center}
-.intro h1{font-family:'Zen Kaku Gothic New',sans-serif;font-size:21px;font-weight:700;color:var(--ink);margin-bottom:6px;letter-spacing:.01em}
-.intro p{font-size:12.5px;color:var(--ink2);line-height:1.6}
-.section{background:var(--white);border:1px solid var(--line);border-radius:var(--r20);overflow:hidden;margin-bottom:14px;box-shadow:var(--shadow-sm);transition:box-shadow .2s}
-.section:hover{box-shadow:var(--shadow-md)}
-.section-head{padding:16px 22px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:11px;background:linear-gradient(180deg, rgba(29,110,107,.02), transparent)}
-.section-badge{width:26px;height:26px;border-radius:8px;background:var(--teal-tint);color:var(--teal-deep);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;flex-shrink:0}
-.section-title{font-family:'Zen Kaku Gothic New',sans-serif;font-size:14px;font-weight:700;color:var(--ink);letter-spacing:.01em}
-.section-hint{margin-left:auto;font-size:10.5px;color:var(--ink3)}
-.section-body{padding:20px 22px}
+body{
+  font-family:'Noto Sans TC',sans-serif;
+  background:
+    radial-gradient(ellipse 1200px 600px at 20% -10%, rgba(232,163,23,.05), transparent 60%),
+    radial-gradient(ellipse 900px 500px at 100% 110%, rgba(196,64,47,.04), transparent 55%),
+    repeating-linear-gradient(135deg, rgba(255,255,255,.012) 0px, rgba(255,255,255,.012) 1px, transparent 1px, transparent 3px),
+    var(--plate);
+  color:var(--ink);
+  min-height:100vh;
+  padding-bottom:70px;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ── Header: 控制台頂欄 ── */
+.site-header{
+  background:linear-gradient(180deg, var(--panel-lt), var(--panel));
+  border-bottom:3px solid var(--steel);
+  box-shadow:0 4px 18px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.04);
+  padding:0 20px;
+  position:sticky; top:0; z-index:100;
+}
+.header-inner{
+  max-width:660px; margin:0 auto; height:68px;
+  display:flex; align-items:center; gap:16px;
+}
+.press-mark{
+  width:44px; height:44px; flex-shrink:0;
+  background:linear-gradient(155deg, var(--steel-lt), var(--steel) 60%);
+  border-radius:var(--r8);
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12), inset 0 -2px 4px rgba(0,0,0,.35), 0 2px 6px rgba(0,0,0,.4);
+  display:flex; align-items:center; justify-content:center;
+  position:relative;
+}
+.press-mark::after{
+  content:'';
+  position:absolute; inset:5px;
+  border:1px solid rgba(232,163,23,.35);
+  border-radius:5px;
+}
+.press-mark svg{width:22px;height:22px;position:relative;z-index:1}
+.header-text{display:flex; flex-direction:column; gap:2px}
+.header-title{
+  font-family:'Oswald',sans-serif;
+  font-size:17px; font-weight:600; letter-spacing:.04em; color:var(--ink);
+  text-transform:uppercase;
+}
+.header-sub{
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px; color:var(--ink3); letter-spacing:.06em;
+}
+.header-right{margin-left:auto; display:flex; align-items:center; gap:10px}
+.status-lamp{
+  display:flex; align-items:center; gap:6px;
+  font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--ink3);
+  letter-spacing:.05em; text-transform:uppercase;
+}
+.status-lamp .dot{
+  width:7px; height:7px; border-radius:50%;
+  background:var(--gauge-green);
+  box-shadow:0 0 6px var(--gauge-green), 0 0 2px var(--gauge-green);
+  animation:pulse 2.4s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+
+.main{max-width:660px; margin:0 auto; padding:26px 16px 0}
+
+/* ── Intro plate ── */
+.intro{padding:2px 4px 20px}
+.intro-eyebrow{
+  font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--safety);
+  letter-spacing:.12em; text-transform:uppercase; margin-bottom:8px;
+  display:flex; align-items:center; gap:8px;
+}
+.intro-eyebrow::before{content:'';width:16px;height:1px;background:var(--safety)}
+.intro h1{
+  font-family:'Oswald',sans-serif; font-size:24px; font-weight:600; color:var(--ink);
+  letter-spacing:.01em; margin-bottom:8px; text-transform:uppercase;
+}
+.intro p{font-size:12.5px; color:var(--ink2); line-height:1.65}
+
+/* ── Section: 控制面板單元 ── */
+.section{
+  background:linear-gradient(180deg, var(--panel-lt), var(--panel));
+  border:1px solid var(--line-strong);
+  border-radius:var(--r12);
+  overflow:hidden;
+  margin-bottom:14px;
+  box-shadow:0 3px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
+}
+.section-head{
+  padding:15px 20px 13px;
+  border-bottom:1px solid var(--line);
+  display:flex; align-items:center; gap:11px;
+  background:linear-gradient(180deg, rgba(255,255,255,.02), transparent);
+}
+.section-badge{
+  width:28px; height:28px; border-radius:var(--r4);
+  background:var(--plate);
+  border:1px solid var(--line-strong);
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.5);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700; color:var(--safety);
+  flex-shrink:0;
+}
+.section-title{
+  font-family:'Oswald',sans-serif; font-size:14px; font-weight:600; color:var(--ink);
+  letter-spacing:.04em; text-transform:uppercase;
+}
+.section-hint{
+  margin-left:auto; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--ink3);
+  letter-spacing:.03em;
+}
+.section-body{padding:20px}
+
+/* ── Fields ── */
 .field{margin-bottom:15px}
 .field:last-child{margin-bottom:0}
-label{display:block;font-size:11.5px;font-weight:600;color:var(--ink2);margin-bottom:6px;letter-spacing:.01em}
-.req{color:var(--red);margin-left:2px}
-.optional{color:var(--ink3);font-weight:400;font-size:10.5px}
-input[type=text],input[type=email],input[type=date],input[type=number],select,textarea{width:100%;padding:10px 13px;font-size:14px;font-family:'Noto Sans TC',sans-serif;color:var(--ink);background:var(--paper);border:1.5px solid var(--line2);border-radius:var(--r10);outline:none;appearance:none;transition:border-color .15s, box-shadow .15s, background .15s}
-input:focus,select:focus,textarea:focus{border-color:var(--teal);background:var(--white);box-shadow:0 0 0 3.5px rgba(29,110,107,.1)}
+label{
+  display:flex; align-items:center; gap:5px;
+  font-family:'JetBrains Mono',monospace; font-size:10.5px; font-weight:500; color:var(--ink2);
+  margin-bottom:7px; letter-spacing:.04em; text-transform:uppercase;
+}
+.req{color:var(--press-red)}
+.optional{color:var(--ink3); font-weight:400; text-transform:none; letter-spacing:0; font-family:'Noto Sans TC',sans-serif}
+
+input[type=text],input[type=email],input[type=date],input[type=number],select,textarea{
+  width:100%; padding:11px 13px; font-size:14px; font-family:'Noto Sans TC',sans-serif;
+  color:var(--ink); background:var(--plate);
+  border:1px solid var(--line-strong);
+  border-radius:var(--r8);
+  outline:none; appearance:none;
+  box-shadow:inset 0 2px 4px rgba(0,0,0,.3);
+  transition:border-color .15s, box-shadow .15s;
+}
+input:focus,select:focus,textarea:focus{
+  border-color:var(--safety);
+  box-shadow:inset 0 2px 4px rgba(0,0,0,.3), 0 0 0 3px var(--safety-dim);
+}
 input::placeholder,textarea::placeholder{color:var(--ink3)}
-select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='9' fill='none'%3E%3Cpath d='M1 1.5l5.5 5.5 5.5-5.5' stroke='%2394A0AC' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;padding-right:38px;cursor:pointer}
-textarea{resize:vertical;min-height:76px;line-height:1.6}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.items-list{display:flex;flex-direction:column;gap:12px;margin-bottom:12px}
-.item-card{border:1.5px solid var(--line);border-radius:var(--r14);overflow:hidden;background:var(--white);transition:border-color .15s}
-.item-card:focus-within{border-color:var(--teal)}
-.item-header{padding:11px 16px;background:var(--paper-deep);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
-.item-num{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--teal-deep);font-weight:600;letter-spacing:.02em;display:flex;align-items:center;gap:6px}
-.item-num::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--amber)}
-.item-del{width:25px;height:25px;border:1px solid var(--line2);border-radius:7px;background:var(--white);color:var(--ink3);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
-.item-del:hover{background:var(--red-tint);border-color:var(--red);color:var(--red)}
-.item-body{padding:16px}
-.file-drop{border:1.5px dashed var(--line2);border-radius:var(--r10);padding:15px;text-align:center;cursor:pointer;transition:all .15s;font-size:12px;color:var(--ink3);background:var(--paper)}
-.file-drop:hover{border-color:var(--teal);background:var(--teal-tint);color:var(--teal-deep)}
-.file-drop.has-file{border-color:var(--teal);background:var(--teal-tint);color:var(--teal-deep);border-style:solid;font-weight:500}
+select{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='9' fill='none'%3E%3Cpath d='M1 1.5l5.5 5.5 5.5-5.5' stroke='%239CA3AB' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 13px center; padding-right:38px; cursor:pointer;
+  color-scheme:dark;
+}
+select option{background:var(--panel); color:var(--ink)}
+textarea{resize:vertical; min-height:76px; line-height:1.6}
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+
+/* ── Item cards: 生產批次卡 ── */
+.items-list{display:flex; flex-direction:column; gap:12px; margin-bottom:12px}
+.item-card{
+  border:1px solid var(--line-strong); border-radius:var(--r8);
+  overflow:hidden; background:var(--plate2);
+  transition:border-color .15s;
+  position:relative;
+}
+.item-card::before{
+  content:''; position:absolute; left:0; top:0; bottom:0; width:3px;
+  background:linear-gradient(180deg, var(--safety), var(--press-red));
+}
+.item-card:focus-within{border-color:var(--safety)}
+.item-header{
+  padding:11px 16px 11px 19px; background:var(--panel);
+  border-bottom:1px solid var(--line);
+  display:flex; align-items:center; justify-content:space-between;
+}
+.item-num{
+  font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--safety);
+  font-weight:700; letter-spacing:.06em;
+}
+.item-del{
+  width:25px; height:25px; border:1px solid var(--line-strong); border-radius:var(--r4);
+  background:var(--plate); color:var(--ink3); font-size:14px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; transition:all .15s;
+}
+.item-del:hover{background:var(--press-red-dim); border-color:var(--press-red); color:var(--press-red)}
+.item-body{padding:16px 16px 16px 19px}
+
+.file-drop{
+  border:1px dashed var(--line-strong); border-radius:var(--r8); padding:15px;
+  text-align:center; cursor:pointer; transition:all .15s; font-size:12px; color:var(--ink3);
+  background:var(--plate);
+  font-family:'JetBrains Mono',monospace; letter-spacing:.02em;
+}
+.file-drop:hover{border-color:var(--safety); background:var(--safety-dim); color:var(--safety)}
+.file-drop.has-file{border-color:var(--gauge-green); background:var(--gauge-green-dim); color:var(--gauge-green); border-style:solid; font-weight:500}
 .file-input{display:none}
-.add-item-btn{width:100%;padding:13px;background:var(--white);border:1.5px dashed var(--line2);border-radius:var(--r14);color:var(--ink2);font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .15s}
-.add-item-btn:hover{border-color:var(--teal);color:var(--teal-deep);background:var(--teal-tint)}
+
+.add-item-btn{
+  width:100%; padding:13px; background:var(--plate2);
+  border:1px dashed var(--line-strong); border-radius:var(--r12);
+  color:var(--ink2); font-size:12.5px; font-weight:500; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:7px;
+  font-family:'JetBrains Mono',monospace; letter-spacing:.04em; text-transform:uppercase;
+  transition:all .15s;
+}
+.add-item-btn:hover{border-color:var(--safety); color:var(--safety); background:var(--safety-dim)}
+
+/* ── Submit: 啟動按鈕 ── */
 .submit-wrap{margin-top:18px}
-.submit-btn{width:100%;padding:16px;background:var(--teal);color:#fff;border:none;border-radius:var(--r14);font-size:15.5px;font-weight:700;font-family:'Zen Kaku Gothic New',sans-serif;letter-spacing:.02em;cursor:pointer;box-shadow:0 4px 14px rgba(29,110,107,.28);transition:background .15s, transform .1s, box-shadow .15s}
-.submit-btn:hover{background:var(--teal-deep);transform:translateY(-1px);box-shadow:0 6px 20px rgba(29,110,107,.34)}
+.submit-btn{
+  width:100%; padding:17px; 
+  background:linear-gradient(180deg, #E8A317, #C4870E);
+  color:#1A1204; border:none;
+  border-radius:var(--r12); font-size:15.5px; font-weight:700;
+  font-family:'Oswald',sans-serif; letter-spacing:.06em; text-transform:uppercase;
+  cursor:pointer;
+  box-shadow:0 4px 16px rgba(232,163,23,.3), inset 0 1px 0 rgba(255,255,255,.35), inset 0 -2px 4px rgba(0,0,0,.15);
+  transition:filter .15s, transform .1s, box-shadow .15s;
+}
+.submit-btn:hover{filter:brightness(1.08); transform:translateY(-1px); box-shadow:0 6px 22px rgba(232,163,23,.4), inset 0 1px 0 rgba(255,255,255,.35)}
 .submit-btn:active{transform:translateY(0)}
-.submit-btn:disabled{background:var(--ink3);cursor:not-allowed;transform:none;box-shadow:none}
-.submit-note{text-align:center;font-size:11px;color:var(--ink3);margin-top:10px;line-height:1.6}
-.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:rotate .6s linear infinite;vertical-align:middle;margin-right:7px}
+.submit-btn:disabled{background:var(--steel); color:var(--ink3); cursor:not-allowed; transform:none; box-shadow:none}
+.submit-note{
+  text-align:center; font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--ink3);
+  margin-top:12px; line-height:1.7; letter-spacing:.02em;
+}
+
+.spin{
+  display:inline-block; width:14px; height:14px; border:2px solid rgba(0,0,0,.25);
+  border-top-color:#1A1204; border-radius:50%; animation:rotate .6s linear infinite;
+  vertical-align:middle; margin-right:8px;
+}
 @keyframes rotate{to{transform:rotate(360deg)}}
-#success-screen{display:none;text-align:center;padding:70px 20px 40px}
-.success-mark{width:76px;height:76px;margin:0 auto 22px;border-radius:50%;background:var(--teal-tint);border:2px solid rgba(29,110,107,.25);display:flex;align-items:center;justify-content:center}
-.success-mark svg{width:32px;height:32px}
-#success-screen h2{font-family:'Zen Kaku Gothic New',sans-serif;font-size:23px;font-weight:700;margin-bottom:9px;color:var(--ink)}
-#success-screen p{font-size:14px;color:var(--ink2);line-height:1.7}
-.order-ref{display:inline-block;margin:20px auto 0;padding:9px 18px;background:var(--paper-deep);border:1px solid var(--line);border-radius:var(--r10);font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink2)}
-.reset-btn{margin-top:26px;padding:11px 26px;background:var(--ink);color:#fff;border:none;border-radius:var(--r10);font-size:13px;cursor:pointer;font-weight:500;transition:opacity .15s}
-.reset-btn:hover{opacity:.82}
-.field-err{font-size:11px;color:var(--red);margin-top:5px;display:none}
+
+/* ── Success: 完工燈號 ── */
+#success-screen{display:none; text-align:center; padding:70px 20px 40px}
+.success-mark{
+  width:80px; height:80px; margin:0 auto 24px; border-radius:50%;
+  background:var(--gauge-green-dim); border:2px solid var(--gauge-green);
+  box-shadow:0 0 0 6px rgba(90,155,110,.06), 0 0 24px rgba(90,155,110,.25);
+  display:flex; align-items:center; justify-content:center;
+}
+.success-mark svg{width:34px;height:34px}
+#success-screen h2{
+  font-family:'Oswald',sans-serif; font-size:24px; font-weight:600; text-transform:uppercase;
+  letter-spacing:.03em; margin-bottom:10px; color:var(--ink);
+}
+#success-screen p{font-size:14px; color:var(--ink2); line-height:1.7}
+.order-ref{
+  display:inline-block; margin:20px auto 0; padding:10px 20px;
+  background:var(--plate2); border:1px solid var(--line-strong); border-radius:var(--r8);
+  font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--safety);
+  box-shadow:inset 0 2px 4px rgba(0,0,0,.3);
+}
+.reset-btn{
+  margin-top:26px; padding:12px 28px; background:var(--panel-lt); color:var(--ink); 
+  border:1px solid var(--line-strong);
+  border-radius:var(--r8); font-size:13px; cursor:pointer; font-weight:500;
+  font-family:'JetBrains Mono',monospace; letter-spacing:.03em; text-transform:uppercase;
+  transition:all .15s;
+}
+.reset-btn:hover{border-color:var(--safety); color:var(--safety)}
+
+.field-err{
+  font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--press-red);
+  margin-top:5px; display:none; letter-spacing:.02em;
+}
 .field-err.show{display:block}
-@media(max-width:520px){.grid2{grid-template-columns:1fr}.section-body{padding:16px}.item-body{padding:14px}.header-inner{height:58px}}
+
+@media(max-width:520px){
+  .grid2{grid-template-columns:1fr}
+  .section-body{padding:16px}
+  .item-body{padding:14px 14px 14px 17px}
+  .header-inner{height:60px}
+  .header-title{font-size:15px}
+}
 </style>
 </head>
 <body>
@@ -87,13 +306,15 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 <header class="site-header">
   <div class="header-inner">
     <div class="press-mark">
-      <svg viewBox="0 0 24 24" fill="none"><path d="M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v7H6v-7z" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <svg viewBox="0 0 24 24" fill="none"><path d="M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v7H6v-7z" stroke="#E8A317" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </div>
     <div class="header-text">
       <span class="header-title">印刷下單系統</span>
-      <span class="header-sub">填單即送出 · 檔案直送印刷廠</span>
+      <span class="header-sub">PRESS-CTRL // ORDER TERMINAL</span>
     </div>
-    <span class="header-tag">v2.3</span>
+    <div class="header-right">
+      <span class="status-lamp"><span class="dot"></span>Online</span>
+    </div>
   </div>
 </header>
 
@@ -101,7 +322,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 
   <div id="success-screen">
     <div class="success-mark">
-      <svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#14504E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#5A9B6E" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </div>
     <h2>訂單已送出</h2>
     <p>印刷廠已收到您的訂單與檔案<br>如有疑問請直接聯繫印刷廠</p>
@@ -111,6 +332,7 @@ textarea{resize:vertical;min-height:76px;line-height:1.6}
 
   <div id="form-wrap">
     <div class="intro">
+      <div class="intro-eyebrow">Print Order Terminal</div>
       <h1>填寫印刷需求</h1>
       <p>選好教室與老師，逐項填入印刷品項，送出後印刷廠即會收到通知</p>
     </div>
@@ -216,7 +438,7 @@ const TYPES=[
  {v:'膠裝A4（許錡加工封面）',b:16,c:4.5},{v:'騎馬釘A3（牛皮紙封面）',b:0,c:8.0},
  {v:'騎馬釘A3（上字封面）',b:0,c:8.5},{v:'騎馬釘A3（無封面）',b:3,c:0},
  {v:'騎馬釘A3（許錡自備封面）',b:0,c:8.5},{v:'騎馬釘B4（牛皮紙封面）',b:0,c:6.5},
- {v:'騎馬釘B4（上字封面）',b:0,c:6.5},{v:'騎馬釘B4（無封面）',b:6.5,c:0},
+ {v:'騎馬釘B4（上字封面）',b:0,c:6.5},{v:'騎馬釘B4（自備封面）',b:0,c:6.5},{v:'騎馬釘B4（無封面）',b:6.5,c:0},
  {v:'騎馬釘A4（牛皮紙封面）',b:0,c:5.0},{v:'騎馬釘A4（上字封面）',b:0,c:5.0},{v:'騎馬釘A4（無封面）',b:3,c:0},
  {v:'A4左側兩釘（無封面）',b:3,c:0},{v:'A3左側兩釘（無封面）',b:3,c:0},{v:'B4左側兩釘（無封面）',b:3,c:0},
  {v:'B5單張/頭條/每週一翻',b:0,c:0,f:2.5},{v:'A5單張（無封面）',b:0,c:0},
@@ -287,6 +509,26 @@ function validate(){
   });
   return ok;
 }
+
+// ── 記住上一筆的教室/老師/Email ──
+function restoreMemory(){
+  try{
+    const saved = JSON.parse(localStorage.getItem('printOrderMemory')||'{}');
+    if(saved.room)document.getElementById('room').value=saved.room;
+    if(saved.teacher)document.getElementById('teacher').value=saved.teacher;
+    if(saved.teacherEmail)document.getElementById('teacherEmail').value=saved.teacherEmail;
+  }catch(e){}
+}
+function saveMemory(){
+  try{
+    localStorage.setItem('printOrderMemory', JSON.stringify({
+      room: document.getElementById('room').value,
+      teacher: document.getElementById('teacher').value,
+      teacherEmail: document.getElementById('teacherEmail').value,
+    }));
+  }catch(e){}
+}
+
 // Apps Script Web App 網址（檔案直接上傳到這裡，不經過 Vercel）
 const APPS_SCRIPT_UPLOAD_URL = 'https://script.google.com/macros/s/AKfycbwwo1QJhp7g59m8-oVApgXfGBDN1mj60_njoQ95njxuvWgH7jTffTcJbwLK5fr5gVI3/exec';
 
@@ -303,7 +545,7 @@ async function uploadFileDirectly(file, itemName, pickup){
   const base64Data = await fileToBase64(file);
   const res = await fetch(APPS_SCRIPT_UPLOAD_URL, {
     method:'POST',
-    headers:{'Content-Type':'text/plain;charset=utf-8'}, // 避免預檢請求(preflight)造成CORS問題
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
     body: JSON.stringify({
       action:'upload', fileName:file.name, mimeType:file.type||'application/octet-stream',
       base64Data, itemName, pickup
@@ -328,7 +570,6 @@ async function submitOrder(){
   const note=document.getElementById('note').value.trim();
 
   try{
-    // ── 步驟一：逐項目直接上傳檔案到 Apps Script（不經過 Vercel，避免逾時）──
     const items=[];
     const cards=[...document.querySelectorAll('.item-card')];
     for(let i=0;i<cards.length;i++){
@@ -350,7 +591,6 @@ async function submitOrder(){
       items.push({ name, type, qty, pages, coverLink, innerLink });
     }
 
-    // ── 步驟二：把訂單資料（純文字，不含檔案）送給 Vercel，快速處理 ──
     btn.innerHTML='<span class="spin"></span>送出訂單中…';
     const res=await fetch('/api/order',{
       method:'POST',
@@ -369,26 +609,8 @@ async function submitOrder(){
     btn.disabled=false;btn.innerHTML='確認送出訂單';
   }
 }
-// ── 記住上一筆的教室/老師/Email ──
-function restoreMemory(){
-  try{
-    const saved = JSON.parse(localStorage.getItem('printOrderMemory')||'{}');
-    if(saved.room)document.getElementById('room').value=saved.room;
-    if(saved.teacher)document.getElementById('teacher').value=saved.teacher;
-    if(saved.teacherEmail)document.getElementById('teacherEmail').value=saved.teacherEmail;
-  }catch(e){}
-}
-function saveMemory(){
-  try{
-    localStorage.setItem('printOrderMemory', JSON.stringify({
-      room: document.getElementById('room').value,
-      teacher: document.getElementById('teacher').value,
-      teacherEmail: document.getElementById('teacherEmail').value,
-    }));
-  }catch(e){}
-}
-restoreMemory();
 
+restoreMemory();
 addItem();
 </script>
 </body>
