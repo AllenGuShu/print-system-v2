@@ -1,6 +1,4 @@
-// api/order.js — v5: 不再處理檔案上傳（檔案已由瀏覽器直接上傳到 Apps Script）
-// 這支 API 只負責：計算金額、寫入 Sheet、觸發寄信（透過 Apps Script）
-// 因為不含檔案處理，執行速度極快，不會逾時
+// api/order.js — v8: 每個印刷項目各自有授課教師（支援多重下單不同老師）
 import { google } from 'googleapis';
 import crypto from 'crypto';
 import { calcPrice } from '../lib/pricing.js';
@@ -29,8 +27,8 @@ async function sendEmailViaAppsScript(payload) {
 }
 
 const recentSubmissions = new Map();
-function getSubmissionHash(room, teacher, customer, pickup, itemsStr) {
-  return crypto.createHash('sha256').update(`${room}|${teacher}|${customer}|${pickup}|${itemsStr}`).digest('hex');
+function getSubmissionHash(room, customer, pickup, itemsStr) {
+  return crypto.createHash('sha256').update(`${room}|${customer}|${pickup}|${itemsStr}`).digest('hex');
 }
 
 export default async function handler(req, res) {
@@ -41,15 +39,18 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { room, teacher, teacherEmail, customer, pickup, note, items } = req.body;
+    const { room, teacherEmail, customer, pickup, note, items } = req.body;
 
-    if (!room || !teacher || !customer || !pickup || !Array.isArray(items) || items.length === 0) {
+    if (!room || !customer || !pickup || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ success: false, error: '缺少必要欄位' });
+    }
+    if (items.some(it => !it.teacher)) {
+      return res.status(400).json({ success: false, error: '每個印刷項目都需要指定授課教師' });
     }
 
     // ── 防止重複送出 ──
-    const itemsStr = JSON.stringify(items.map(i => ({ name: i.name, type: i.type, qty: i.qty, pages: i.pages })));
-    const hash = getSubmissionHash(room, teacher, customer, pickup, itemsStr);
+    const itemsStr = JSON.stringify(items.map(i => ({ name: i.name, teacher: i.teacher, type: i.type, qty: i.qty, pages: i.pages })));
+    const hash = getSubmissionHash(room, customer, pickup, itemsStr);
     const now = Date.now();
     for (const [key, v] of recentSubmissions.entries()) {
       if (now - v.ts > 5 * 60 * 1000) recentSubmissions.delete(key);
@@ -65,11 +66,12 @@ export default async function handler(req, res) {
     let grandTotal = 0;
     let hasReviewNeeded = false;
     const calculatedItems = items.map(item => {
-      const result = calcPrice(item.type, item.pages, item.qty);
+      const result = calcPrice(item.type, item.pages, item.qty, item.teacher);
       grandTotal += result.total;
       if (result.needsReview) hasReviewNeeded = true;
       return {
         ...item, ...result,
+        type: result.resolvedType || item.type,
         coverLinks: item.coverLink ? [item.coverLink] : [],
         innerLinks: item.innerLink ? [item.innerLink] : [],
       };
@@ -77,13 +79,12 @@ export default async function handler(req, res) {
 
     const timestamp = new Date().toISOString();
 
-    // ── 寫入 Google Sheet ──
+    // ── 寫入 Google Sheet（每個項目各自的老師）──
     const auth = await getAuth();
     const sheets = google.sheets({ version: 'v4', auth });
 
-    // 欄位順序：印刷用資訊在前，價格資訊(實際張數/紙單價/單本金額/總金額)移到最後
     const rows = calculatedItems.map(item => [
-      orderId, timestamp, customer, room, teacher, pickup,
+      orderId, timestamp, customer, room, item.teacher, pickup,
       item.name, item.type, item.qty, item.pages || '',
       item.coverLinks.join(' | '), item.innerLinks.join(' | '), note,
       item.needsReview ? '⚠需確認：' + (item.reviewReason || '') : '',
@@ -97,17 +98,16 @@ export default async function handler(req, res) {
       requestBody: { values: rows },
     });
 
-    // ── 寄信（不等待完成，讓 API 快速回應）──
+    // ── 寄信給你/印刷負責人（列出每項目對應的老師）──
     const allCoverLinks = calculatedItems.flatMap(i => i.coverLinks);
     const allInnerLinks = calculatedItems.flatMap(i => i.innerLinks);
     const sheetUrl = `https://docs.google.com/spreadsheets/d/${process.env.GOOGLE_SHEET_ID}`;
+    const teacherList = [...new Set(calculatedItems.map(i => i.teacher))];
 
-    // ⚠️ 重要：Vercel回應送出後會凍結執行環境，背景任務不會真正完成
-    // 所以這裡改成「等待寄信完成」再回應，確保信件真的送出
     await Promise.allSettled([
-      sendAdminNotification({ orderId, timestamp, customer, room, teacher, pickup, note, items: calculatedItems, grandTotal, hasReviewNeeded, coverLinks: allCoverLinks, innerLinks: allInnerLinks, sheetUrl }),
+      sendAdminNotification({ orderId, timestamp, customer, room, teacherList, pickup, note, items: calculatedItems, grandTotal, hasReviewNeeded, coverLinks: allCoverLinks, innerLinks: allInnerLinks, sheetUrl }),
       (teacherEmail && teacherEmail.includes('@'))
-        ? sendTeacherConfirmation({ orderId, teacherEmail, teacher, room, customer, pickup, note, items: calculatedItems })
+        ? sendTeacherConfirmation({ orderId, teacherEmail, room, customer, pickup, note, items: calculatedItems })
         : Promise.resolve(),
     ]);
 
@@ -119,11 +119,12 @@ export default async function handler(req, res) {
   }
 }
 
-async function sendAdminNotification({ orderId, timestamp, customer, room, teacher, pickup, note, items, grandTotal, hasReviewNeeded, coverLinks, innerLinks, sheetUrl }) {
+async function sendAdminNotification({ orderId, timestamp, customer, room, teacherList, pickup, note, items, grandTotal, hasReviewNeeded, coverLinks, innerLinks, sheetUrl }) {
   const itemRows = items.map((it, i) => `
     <tr style="${it.needsReview ? 'background:#FEF2F2' : ''}">
       <td style="padding:6px 8px;border-bottom:1px solid #eee">${i+1}</td>
       <td style="padding:6px 8px;border-bottom:1px solid #eee">${it.name}</td>
+      <td style="padding:6px 8px;border-bottom:1px solid #eee;font-size:11px">${it.teacher}</td>
       <td style="padding:6px 8px;border-bottom:1px solid #eee;font-size:11px">${it.type || '（未選擇）'}</td>
       <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right">${it.qty}</td>
       <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right">${it.pages||'—'}</td>
@@ -134,9 +135,10 @@ async function sendAdminNotification({ orderId, timestamp, customer, room, teach
     ? '<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#DC2626;font-weight:600">⚠️ 此訂單有項目無法自動計價，請人工確認金額（標紅色的項目）</div>'
     : '';
 
+  const teacherStr = teacherList.join('、');
   const subject = hasReviewNeeded
-    ? `【⚠️需確認】印刷新訂單 — ${room} ${teacher}`
-    : `【印刷新訂單】${room} — ${teacher}  NT$${grandTotal.toLocaleString()}`;
+    ? `【⚠️需確認】印刷新訂單 — ${room} ${teacherStr}`
+    : `【印刷新訂單】${room} — ${teacherStr}  NT$${grandTotal.toLocaleString()}`;
 
   const html = `
   <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
@@ -147,9 +149,9 @@ async function sendAdminNotification({ orderId, timestamp, customer, room, teach
     <div style="padding:20px 24px;border:1px solid #eee;border-top:none">
       ${warnBanner}
       <p><b>客戶：</b>${customer}　<b>教室：</b>${room}</p>
-      <p><b>教師：</b>${teacher}　<b>取件：</b>${pickup}</p>
+      <p><b>授課教師：</b>${teacherStr}　<b>取件：</b>${pickup}</p>
       <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:12px">
-        <thead><tr style="background:#f5f5f5"><th style="padding:6px 8px;text-align:left">#</th><th style="padding:6px 8px;text-align:left">檔名</th><th style="padding:6px 8px;text-align:left">類型</th><th style="padding:6px 8px">數量</th><th style="padding:6px 8px">頁數</th><th style="padding:6px 8px">金額</th></tr></thead>
+        <thead><tr style="background:#f5f5f5"><th style="padding:6px 8px;text-align:left">#</th><th style="padding:6px 8px;text-align:left">檔名</th><th style="padding:6px 8px;text-align:left">教師</th><th style="padding:6px 8px;text-align:left">類型</th><th style="padding:6px 8px">數量</th><th style="padding:6px 8px">頁數</th><th style="padding:6px 8px">金額</th></tr></thead>
         <tbody>${itemRows}</tbody>
       </table>
       <div style="background:#eff6ff;padding:14px;border-radius:8px;margin-top:16px;display:flex;justify-content:space-between">
@@ -164,16 +166,17 @@ async function sendAdminNotification({ orderId, timestamp, customer, room, teach
     </div>
   </div>`;
 
-  const plain = `【印刷新訂單】\n訂單：${orderId}\n教室：${room}\n教師：${teacher}\n客戶：${customer}\n取件：${pickup}\n總額：${hasReviewNeeded?'部分待確認':'NT$'+grandTotal.toLocaleString()}`;
+  const plain = `【印刷新訂單】\n訂單：${orderId}\n教室：${room}\n授課教師：${teacherStr}\n客戶：${customer}\n取件：${pickup}\n總額：${hasReviewNeeded?'部分待確認':'NT$'+grandTotal.toLocaleString()}`;
 
   await sendEmailViaAppsScript({ emailType: 'admin', subject, htmlBody: html, plainBody: plain });
 }
 
-async function sendTeacherConfirmation({ orderId, teacherEmail, teacher, room, customer, pickup, note, items }) {
+async function sendTeacherConfirmation({ orderId, teacherEmail, room, customer, pickup, note, items }) {
   const itemRows = items.map((it, i) => `
     <tr>
       <td style="padding:6px 8px;border-bottom:1px solid #eee">${i+1}</td>
       <td style="padding:6px 8px;border-bottom:1px solid #eee">${it.name}</td>
+      <td style="padding:6px 8px;border-bottom:1px solid #eee;font-size:11px">${it.teacher}</td>
       <td style="padding:6px 8px;border-bottom:1px solid #eee;font-size:11px">${it.type || '（未選擇）'}</td>
       <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right">${it.qty} 份</td>
       <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right">${it.pages||'—'} 頁</td>
@@ -186,11 +189,11 @@ async function sendTeacherConfirmation({ orderId, teacherEmail, teacher, room, c
       <p style="color:rgba(255,255,255,.7);font-size:11px;margin:3px 0 0">${orderId}</p>
     </div>
     <div style="padding:20px 24px;border:1px solid #eee;border-top:none">
-      <p style="color:#333;font-size:14px;margin-bottom:14px">${teacher} 您好，您的印刷訂單已成功送出，印刷廠已收到以下項目：</p>
+      <p style="color:#333;font-size:14px;margin-bottom:14px">您的印刷訂單已成功送出，印刷廠已收到以下項目：</p>
       <p><b>教室：</b>${room}　<b>客戶名：</b>${customer}</p>
       <p><b>取件時間：</b>${pickup}</p>
       <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:12px">
-        <thead><tr style="background:#f5f5f5"><th style="padding:6px 8px;text-align:left">#</th><th style="padding:6px 8px;text-align:left">檔名</th><th style="padding:6px 8px;text-align:left">類型</th><th style="padding:6px 8px">數量</th><th style="padding:6px 8px">頁數</th></tr></thead>
+        <thead><tr style="background:#f5f5f5"><th style="padding:6px 8px;text-align:left">#</th><th style="padding:6px 8px;text-align:left">檔名</th><th style="padding:6px 8px;text-align:left">教師</th><th style="padding:6px 8px;text-align:left">類型</th><th style="padding:6px 8px">數量</th><th style="padding:6px 8px">頁數</th></tr></thead>
         <tbody>${itemRows}</tbody>
       </table>
       ${note ? `<p style="margin-top:14px;color:#666;font-size:12px">備註：${note}</p>` : ''}
