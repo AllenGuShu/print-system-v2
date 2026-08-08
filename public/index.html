@@ -178,6 +178,14 @@ input:focus,select:focus,textarea:focus{
   box-shadow:inset 0 2px 4px rgba(0,0,0,.3), 0 0 0 3px var(--safety-dim);
 }
 input::placeholder,textarea::placeholder{color:var(--ink3)}
+input[type=date]::-webkit-calendar-picker-indicator{
+  filter:invert(1) brightness(1.6);
+  cursor:pointer;
+  padding:4px;
+  border-radius:4px;
+  transition:background .15s;
+}
+input[type=date]::-webkit-calendar-picker-indicator:hover{background:rgba(232,163,23,.18)}
 select{
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='9' fill='none'%3E%3Cpath d='M1 1.5l5.5 5.5 5.5-5.5' stroke='%239CA3AB' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat:no-repeat; background-position:right 13px center; padding-right:38px; cursor:pointer;
@@ -388,31 +396,7 @@ textarea{resize:vertical; min-height:76px; line-height:1.6}
                   </select>
                   <div class="field-err" id="err-room">請選擇教室</div>
                 </div>
-                <div class="field">
-                  <label>授課教師 <span class="req">*</span></label>
-                  <select id="teacher">
-                    <option value="">請選擇老師</option>
-                    <option>大里教室(行政用)</option>
-                    <option>育豪教室(行政用)</option>
-                    <option>苑裡教室(行政用)</option>
-                    <option>許豪老師(許豪英文團隊)</option>
-                    <option>許婕老師(許豪英文團隊)</option>
-                    <option>許錡老師(許豪英文團隊)</option>
-                    <option>Ethan老師(許豪英文團隊)</option>
-                    <option>Ted老師(許豪英文團隊)</option>
-                    <option>Justin老師(許豪英文團隊)</option>
-                    <option>QQ老師(許豪英文團隊)</option>
-                    <option>古冀老師(古冀數學團隊)</option>
-                    <option>竺祈老師(古冀數學團隊)</option>
-                    <option>施鴻老師(古冀數學團隊)</option>
-                    <option>證浩老師</option>
-                    <option>袁則老師</option>
-                    <option>薛睿老師</option>
-                    <option>陳翔老師</option>
-                    <option>其他</option>
-                  </select>
-                  <div class="field-err" id="err-teacher">請選擇授課教師</div>
-                </div>
+                
               </div>
               <div class="field">
                 <label>您的 Email <span class="optional">（選填，填寫後將收到下單確認信）</span></label>
@@ -503,9 +487,34 @@ function addItem(){
     <div class="item-header"><span class="item-num">ITEM ${String(id).padStart(2,'0')}</span>
       <button type="button" class="item-del" onclick="delItem(${id})">✕</button></div>
     <div class="item-body">
+      <div class="field"><label>授課教師 <span class="req">*</span></label>
+        <select id="teacher-${id}" onchange="updateCoverHint(${id})">
+          <option value="">請選擇老師</option>
+          <option>大里教室(行政用)</option>
+          <option>育豪教室(行政用)</option>
+          <option>苑裡教室(行政用)</option>
+          <option>許豪老師(許豪英文團隊)</option>
+          <option>許婕老師(許豪英文團隊)</option>
+          <option>許錡老師(許豪英文團隊)</option>
+          <option>Ethan老師(許豪英文團隊)</option>
+          <option>Ted老師(許豪英文團隊)</option>
+          <option>Justin老師(許豪英文團隊)</option>
+          <option>QQ老師(許豪英文團隊)</option>
+          <option>古冀老師(古冀數學團隊)</option>
+          <option>竺祈老師(古冀數學團隊)</option>
+          <option>施鴻老師(古冀數學團隊)</option>
+          <option>證浩老師</option>
+          <option>袁則老師</option>
+          <option>薛睿老師</option>
+          <option>陳翔老師</option>
+          <option>其他</option>
+        </select>
+      </div>
       <div class="field"><label>檔案名稱 <span class="req">*</span></label><input type="text" id="name-${id}" placeholder="請輸入檔案名稱"></div>
       <div class="field"><label>印刷類型 <span class="req">*</span></label>
-        <select id="type-${id}"><option value="">請選擇印刷類型</option>${TYPE_OPTIONS}</select></div>
+        <select id="type-${id}" onchange="updateCoverHint(${id})"><option value="">請選擇印刷類型</option>${TYPE_OPTIONS}</select>
+        <div class="field-err" id="cover-hint-${id}" style="color:var(--safety);display:none"></div>
+      </div>
       <div class="grid2">
         <div class="field"><label>數量（份） <span class="req">*</span></label><input type="number" id="qty-${id}" min="1" placeholder="0"></div>
         <div class="field"><label>總頁數</label><input type="number" id="pages-${id}" min="1" placeholder="0"></div>
@@ -524,6 +533,10 @@ function addItem(){
       </div>
     </div>`;
   document.getElementById('items-list').appendChild(div);
+  if(lastUsedTeacher){
+    const teacherSel = document.getElementById('teacher-'+id);
+    if(teacherSel) teacherSel.value = lastUsedTeacher;
+  }
   div.querySelector('#name-'+id).focus();
 }
 function delItem(id){document.getElementById('item-'+id)?.remove()}
@@ -563,20 +576,26 @@ function showErr(id){document.getElementById('err-'+id)?.classList.add('show')}
 function clearErr(id){document.getElementById('err-'+id)?.classList.remove('show')}
 function validate(){
   let ok=true;
-  ['room','teacher','customer','pickup'].forEach(id=>{
+  ['room','customer','pickup'].forEach(id=>{
     if(!document.getElementById(id)?.value?.trim()){showErr(id);ok=false}else clearErr(id);
   });
   const items=document.querySelectorAll('.item-card');
   if(!items.length){alert('請至少新增一個印刷項目');return false}
   let hasOversized=false;
+  let missingTeacher=false;
   items.forEach(card=>{
     const id=card.id.replace('item-','');
+    if(!document.getElementById('teacher-'+id)?.value) missingTeacher=true;
     if(!document.getElementById('name-'+id)?.value||!document.getElementById('type-'+id)?.value||!document.getElementById('qty-'+id)?.value)ok=false;
     const coverInput=document.getElementById('cover-'+id);
     const innerInput=document.getElementById('inner-'+id);
     if(coverInput?.files[0]?.size > MAX_FILE_SIZE) hasOversized=true;
     if(innerInput?.files[0]?.size > MAX_FILE_SIZE) hasOversized=true;
   });
+  if(missingTeacher){
+    alert('⚠️ 每個印刷項目都要選擇授課教師');
+    return false;
+  }
   if(hasOversized){
     alert('⚠️ 有檔案超過 50MB 上限，請移除或壓縮後再送出');
     return false;
@@ -585,20 +604,29 @@ function validate(){
 }
 
 // ── 記住上一筆的教室/老師/Email ──
+let lastUsedTeacher = '';
+
 function restoreMemory(){
   try{
     const saved = JSON.parse(localStorage.getItem('printOrderMemory')||'{}');
     if(saved.room)document.getElementById('room').value=saved.room;
-    if(saved.teacher)document.getElementById('teacher').value=saved.teacher;
     if(saved.teacherEmail)document.getElementById('teacherEmail').value=saved.teacherEmail;
+    if(saved.lastTeacher) lastUsedTeacher = saved.lastTeacher;
   }catch(e){}
 }
 function saveMemory(){
   try{
+    // 記錄最後一個項目使用的老師，方便下次快速選擇
+    const cards=[...document.querySelectorAll('.item-card')];
+    let lastTeacher = '';
+    if(cards.length){
+      const lastId = cards[cards.length-1].id.replace('item-','');
+      lastTeacher = document.getElementById('teacher-'+lastId)?.value || '';
+    }
     localStorage.setItem('printOrderMemory', JSON.stringify({
       room: document.getElementById('room').value,
-      teacher: document.getElementById('teacher').value,
       teacherEmail: document.getElementById('teacherEmail').value,
+      lastTeacher,
     }));
   }catch(e){}
 }
@@ -630,6 +658,38 @@ async function uploadFileDirectly(file, itemName, pickup){
   return data.url;
 }
 
+// 「膠裝A4（許豪自備封面）」只給許豪老師本人使用，其他老師選這個類型時
+// 自動改用「膠裝A4（上字封面）」計價，避免漏算封面費
+function resolveTeacherSpecificType(type, teacher){
+  if(type === '膠裝A4（許豪自備封面）' && !teacher.startsWith('許豪老師')){
+    return '膠裝A4（上字封面）';
+  }
+  if(type === '騎馬釘A3（許錡自備封面）' && !teacher.startsWith('許錡老師')){
+    return '騎馬釘A3（上字封面）';
+  }
+  if(type === '膠裝A4（許錡加工封面）' && !teacher.startsWith('許錡老師')){
+    return '膠裝A4（上字封面）';
+  }
+  return type;
+}
+
+// 選印刷類型時，若跟目前選的老師對不上，即時提醒
+function updateCoverHint(id){
+  const typeSel = document.getElementById('type-'+id);
+  const teacherSel = document.getElementById('teacher-'+id);
+  const hint = document.getElementById('cover-hint-'+id);
+  if(!typeSel || !teacherSel || !hint) return;
+  const type = typeSel.value;
+  const teacher = teacherSel.value;
+  const resolved = resolveTeacherSpecificType(type, teacher);
+  if(resolved !== type){
+    hint.textContent = `⚠ 此封面類型僅限本人使用，將自動改用「${resolved}」計價`;
+    hint.style.display = 'block';
+  }else{
+    hint.style.display = 'none';
+  }
+}
+
 async function submitOrder(){
   if(!validate())return;
   saveMemory();
@@ -637,7 +697,6 @@ async function submitOrder(){
   btn.disabled=true;btn.innerHTML='<span class="spin"></span>上傳檔案中…';
 
   const room=document.getElementById('room').value;
-  const teacher=document.getElementById('teacher').value.trim();
   const teacherEmail=document.getElementById('teacherEmail').value.trim();
   const customer=document.getElementById('customer').value.trim();
   const pickup=document.getElementById('pickup').value;
@@ -650,9 +709,13 @@ async function submitOrder(){
       const card=cards[i];
       const id=card.id.replace('item-','');
       const name=document.getElementById('name-'+id)?.value||'';
-      const type=document.getElementById('type-'+id)?.value||'';
+      const teacher=document.getElementById('teacher-'+id)?.value||'';
+      let type=document.getElementById('type-'+id)?.value||'';
       const qty=+(document.getElementById('qty-'+id)?.value)||0;
       const pages=+(document.getElementById('pages-'+id)?.value)||0;
+
+      // 自動修正「特定老師專用封面」類型，避免其他老師誤用漏算封面費
+      type = resolveTeacherSpecificType(type, teacher);
 
       btn.innerHTML=`<span class="spin"></span>上傳第 ${i+1}/${cards.length} 項檔案…`;
 
@@ -662,14 +725,14 @@ async function submitOrder(){
       if(coverInput?.files[0]) coverLink = await uploadFileDirectly(coverInput.files[0], name, pickup);
       if(innerInput?.files[0]) innerLink = await uploadFileDirectly(innerInput.files[0], name, pickup);
 
-      items.push({ name, type, qty, pages, coverLink, innerLink });
+      items.push({ name, teacher, type, qty, pages, coverLink, innerLink });
     }
 
     btn.innerHTML='<span class="spin"></span>送出訂單中…';
     const res=await fetch('/api/order',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ room, teacher, teacherEmail, customer, pickup, note, items }),
+      body: JSON.stringify({ room, teacherEmail, customer, pickup, note, items }),
     });
     const data=await res.json();
     if(data.success){
