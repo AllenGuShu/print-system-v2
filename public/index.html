@@ -474,6 +474,7 @@ const TYPES=[
  {v:'彩色印刷A4單面',b:0,c:0,f:4},{v:'A5單面彩色頭條新聞',b:0,c:0,f:1.25},
  {v:'彩色文宣DM-A4',b:0,c:0,f:4.5},{v:'彩色文宣DM-B4',b:0,c:0,f:6.5},
  {v:'叫紙A4',b:0,c:0,f:90},{v:'叫紙B4',b:0,c:0,f:135},{v:'叫紙A3',b:0,c:0,f:175},
+ {v:'叫紙A5',b:0,c:0,f:75},{v:'叫紙B5',b:0,c:0,f:85},
  {v:'頭條新聞A5（黑白）',b:0,c:0,f:0.8},{v:'頭條新聞A5（彩色）',b:0,c:0,f:1.5},
  {v:'頭條新聞B5（黑白）',b:0,c:0,f:1.2},{v:'頭條新聞B5（彩色）',b:0,c:0,f:2.0},
 ];
@@ -486,8 +487,8 @@ const TYPE_OPTIONS=`
 <optgroup label="── 騎馬釘A4 ──"><option>騎馬釘A4（牛皮紙封面）</option><option>騎馬釘A4（上字封面）</option><option>騎馬釘A4（無封面）</option></optgroup>
 <optgroup label="── 左側兩釘 ──"><option>A4左側兩釘（無封面）</option><option>A3左側兩釘（無封面）</option><option>B4左側兩釘（無封面）</option></optgroup>
 <optgroup label="── 單張/雙面 ──"><option>B5單張</option><option>A5單張（無封面）</option><option>A4單面（無封面）</option><option>B4單面（無封面）</option><option>A3單面（無封面）</option><option>A4雙面（無裝訂）</option><option>B4雙面（無裝訂）</option><option>A3雙面（無裝訂）</option></optgroup>
-<optgroup label="── 頭條新聞 ──"><option>頭條新聞A5（黑白）</option><option>頭條新聞A5（彩色）</option><option>頭條新聞B5（黑白）</option><option>頭條新聞B5（彩色）</option><option>A5單面彩色頭條新聞</option></optgroup>
-<optgroup label="── 叫紙 ──"><option>叫紙A4</option><option>叫紙B4</option><option>叫紙A3</option></optgroup>
+<optgroup label="── 頭條新聞 ──"><option>頭條新聞A5（黑白）</option><option>頭條新聞A5（彩色）</option><option>頭條新聞B5（黑白）</option><option>頭條新聞B5（彩色）</option></optgroup>
+<optgroup label="── 叫紙 ──"><option>叫紙A4</option><option>叫紙B4</option><option>叫紙A3</option><option>叫紙A5</option><option>叫紙B5</option></optgroup>
 <optgroup label="── 彩色印刷/DM ──"><option>彩色印刷A4單面</option><option>彩色文宣DM-A4</option><option>彩色文宣DM-B4</option></optgroup>`;
 
 function addItem(){
@@ -684,7 +685,7 @@ function resolveTeacherSpecificType(type, teacher){
 }
 
 // 叫紙類型：改成「包數」計價，不需要總頁數欄位（自動視為1）
-const PAPER_ORDER_TYPES = ['叫紙A4', '叫紙B4', '叫紙A3'];
+const PAPER_ORDER_TYPES = ['叫紙A4', '叫紙B4', '叫紙A3', '叫紙A5', '叫紙B5'];
 
 function updateFieldLabels(id){
   const typeSel = document.getElementById('type-'+id);
