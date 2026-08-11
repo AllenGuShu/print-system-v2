@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>快速試算 — 印刷下單系統</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;500;700&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --plate:      #14171A;
+  --plate2:     #1B1F23;
+  --panel:      #21262B;
+  --panel-lt:   #2A3037;
+  --steel:      #3A414A;
+  --steel-lt:   #4A525C;
+  --ink:        #E8E6DF;
+  --ink2:       #9CA3AB;
+  --ink3:       #676E76;
+  --safety:     #E8A317;
+  --safety-dim: rgba(232,163,23,.14);
+  --press-red:  #C4402F;
+  --press-red-dim: rgba(196,64,47,.14);
+  --gauge-green:#5A9B6E;
+  --gauge-green-dim: rgba(90,155,110,.14);
+  --line:       rgba(232,230,223,.09);
+  --line-strong:rgba(232,230,223,.16);
+  --r4:4px; --r8:8px; --r12:12px;
+}
+
+html{scroll-behavior:smooth}
+body{
+  font-family:'Noto Sans TC',sans-serif;
+  background:
+    radial-gradient(ellipse 1200px 600px at 20% -10%, rgba(232,163,23,.05), transparent 60%),
+    radial-gradient(ellipse 900px 500px at 100% 110%, rgba(196,64,47,.04), transparent 55%),
+    repeating-linear-gradient(135deg, rgba(255,255,255,.012) 0px, rgba(255,255,255,.012) 1px, transparent 1px, transparent 3px),
+    var(--plate);
+  color:var(--ink);
+  min-height:100vh;
+  padding-bottom:80px;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ── Login gate ── */
+#gate{position:fixed;inset:0;background:var(--plate);display:flex;align-items:center;justify-content:center;z-index:999}
+.lbox{background:linear-gradient(180deg, var(--panel-lt), var(--panel));border:1px solid var(--line-strong);border-radius:16px;padding:40px;width:300px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+.lbox .mark{width:52px;height:52px;margin:0 auto 16px;border-radius:12px;background:linear-gradient(155deg, var(--steel-lt), var(--steel) 60%);border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center}
+.lbox h2{font-family:'Oswald',sans-serif;font-size:19px;font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:.02em}
+.lbox p{font-size:13px;color:var(--ink2);margin-bottom:22px}
+.lbox input{width:100%;padding:12px 14px;background:var(--plate);border:1px solid var(--line-strong);border-radius:8px;color:var(--ink);font-size:15px;outline:none;margin-bottom:12px;text-align:center;letter-spacing:.25em;box-shadow:inset 0 2px 4px rgba(0,0,0,.3)}
+.lbox input:focus{border-color:var(--safety)}
+.lbox button{width:100%;padding:12px;background:linear-gradient(180deg,#E8A317,#C4870E);color:#1A1204;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-weight:700;font-family:'Oswald',sans-serif;letter-spacing:.03em;text-transform:uppercase}
+.lerr{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--press-red);margin-top:9px;display:none}
+
+/* ── Header ── */
+.site-header{
+  background:linear-gradient(180deg, var(--panel-lt), var(--panel));
+  border-bottom:3px solid var(--steel);
+  box-shadow:0 4px 18px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.04);
+  padding:0 20px;
+  position:sticky; top:0; z-index:100;
+}
+.header-inner{max-width:900px; margin:0 auto; height:68px; display:flex; align-items:center; gap:16px}
+.press-mark{
+  width:44px; height:44px; flex-shrink:0;
+  background:linear-gradient(155deg, var(--steel-lt), var(--steel) 60%);
+  border-radius:var(--r8); border:1px solid rgba(255,255,255,.08);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12), inset 0 -2px 4px rgba(0,0,0,.35), 0 2px 6px rgba(0,0,0,.4);
+  display:flex; align-items:center; justify-content:center; position:relative;
+}
+.press-mark::after{content:'';position:absolute;inset:5px;border:1px solid rgba(232,163,23,.35);border-radius:5px}
+.press-mark svg{width:22px;height:22px;position:relative;z-index:1}
+.header-text{display:flex; flex-direction:column; gap:2px}
+.header-title{font-family:'Oswald',sans-serif; font-size:19px; font-weight:700; letter-spacing:.03em; text-transform:uppercase}
+.header-sub{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink2); letter-spacing:.05em}
+.header-right{margin-left:auto; display:flex; align-items:center; gap:12px}
+.nav-link{
+  font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--ink);
+  text-decoration:none; letter-spacing:.03em; text-transform:uppercase;
+  padding:9px 16px; border:1px solid var(--line-strong); border-radius:var(--r8);
+  transition:all .15s; background:none; cursor:pointer;
+}
+.nav-link:hover{border-color:var(--safety); color:var(--safety)}
+.private-tag{
+  font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--press-red);
+  background:var(--press-red-dim); padding:5px 11px; border-radius:20px;
+  letter-spacing:.04em; font-weight:600;
+}
+
+.main{max-width:900px; margin:0 auto; padding:26px 16px 0}
+
+.intro{padding:2px 4px 20px}
+.intro-eyebrow{
+  font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--safety);
+  letter-spacing:.1em; text-transform:uppercase; margin-bottom:8px;
+  display:flex; align-items:center; gap:8px;
+}
+.intro-eyebrow::before{content:'';width:16px;height:1px;background:var(--safety)}
+.intro h1{font-family:'Oswald',sans-serif; font-size:27px; font-weight:700; margin-bottom:9px; text-transform:uppercase}
+.intro p{font-size:14px; color:var(--ink2); line-height:1.7}
+
+.section{
+  background:linear-gradient(180deg, var(--panel-lt), var(--panel));
+  border:1px solid var(--line-strong); border-radius:var(--r12); overflow:hidden;
+  margin-bottom:14px; box-shadow:0 3px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
+}
+.section-head{padding:15px 20px 13px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:11px}
+.section-title{font-family:'Oswald',sans-serif; font-size:15.5px; font-weight:700; letter-spacing:.03em; text-transform:uppercase}
+.section-body{padding:20px}
+
+label{
+  display:flex; align-items:center; gap:5px;
+  font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:600; color:var(--ink);
+  margin-bottom:8px; letter-spacing:.03em; text-transform:uppercase;
+}
+select,input[type=number],input[type=text]{
+  width:100%; padding:12px 14px; font-size:15px; font-family:'Noto Sans TC',sans-serif;
+  color:var(--ink); background:var(--plate); border:1px solid var(--line-strong);
+  border-radius:var(--r8); outline:none; appearance:none;
+  box-shadow:inset 0 2px 4px rgba(0,0,0,.3);
+  color-scheme:dark;
+}
+select:focus,input:focus{border-color:var(--safety); box-shadow:inset 0 2px 4px rgba(0,0,0,.3), 0 0 0 3px var(--safety-dim)}
+select option{background:var(--panel);color:var(--ink)}
+select{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='9' fill='none'%3E%3Cpath d='M1 1.5l5.5 5.5 5.5-5.5' stroke='%239CA3AB' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 13px center; padding-right:38px; cursor:pointer;
+}
+
+.grid4{display:grid; grid-template-columns:2fr 1.4fr 1fr 1fr; gap:12px}
+.field{margin-bottom:0}
+
+/* ── Rows table ── */
+.calc-table-wrap{overflow-x:auto; margin-top:4px}
+table.calc{width:100%; border-collapse:collapse; font-size:13px}
+table.calc th{
+  text-align:left; padding:9px 10px; font-family:'JetBrains Mono',monospace; font-size:10.5px;
+  color:var(--ink2); text-transform:uppercase; letter-spacing:.04em; border-bottom:1px solid var(--line-strong);
+  white-space:nowrap;
+}
+table.calc td{padding:10px; border-bottom:1px solid var(--line); vertical-align:middle}
+table.calc tr:hover td{background:rgba(255,255,255,.02)}
+.row-amount{font-family:'JetBrains Mono',monospace; font-weight:700; color:var(--gauge-green); text-align:right}
+.row-del{
+  width:26px;height:26px;border:1px solid var(--line-strong);border-radius:var(--r4);
+  background:var(--plate);color:var(--ink3);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .15s; font-size:14px;
+}
+.row-del:hover{background:var(--press-red-dim);border-color:var(--press-red);color:var(--press-red)}
+.row-warn{color:var(--press-red); font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600}
+
+.add-row-btn{
+  width:100%; padding:14px; margin-top:16px; background:var(--plate2);
+  border:1px dashed var(--line-strong); border-radius:var(--r12);
+  color:var(--ink2); font-size:13px; font-weight:500; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:7px;
+  font-family:'JetBrains Mono',monospace; letter-spacing:.04em; text-transform:uppercase;
+  transition:all .15s;
+}
+.add-row-btn:hover{border-color:var(--safety); color:var(--safety); background:var(--safety-dim)}
+
+/* ── Total bar ── */
+.total-bar{
+  margin-top:16px; padding:22px 26px;
+  background:linear-gradient(180deg, var(--panel-lt), var(--panel));
+  border:1px solid var(--safety); border-radius:var(--r12);
+  display:flex; align-items:center; justify-content:space-between;
+  box-shadow:0 4px 20px rgba(232,163,23,.12), inset 0 1px 0 rgba(255,255,255,.03);
+}
+.total-bar .label{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink2);letter-spacing:.04em;text-transform:uppercase}
+.total-bar .sub{font-size:11px;color:var(--ink3);margin-top:3px}
+.total-bar .amount{font-family:'JetBrains Mono',monospace;font-size:32px;font-weight:700;color:var(--safety)}
+
+.clear-btn{
+  margin-top:14px; padding:11px 20px; background:var(--plate2);
+  border:1px solid var(--line-strong); border-radius:var(--r8);
+  color:var(--ink2); font-size:12px; cursor:pointer;
+  font-family:'JetBrains Mono',monospace; letter-spacing:.03em; text-transform:uppercase;
+  transition:all .15s;
+}
+.clear-btn:hover{border-color:var(--press-red); color:var(--press-red)}
+
+.empty-hint{text-align:center; padding:40px 20px; color:var(--ink3); font-family:'JetBrains Mono',monospace; font-size:12.5px}
+
+footer{max-width:900px;margin:36px auto 0;padding:20px 16px;text-align:center;border-top:1px solid var(--line)}
+footer p{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ink3);letter-spacing:.04em}
+
+@media(max-width:720px){
+  .grid4{grid-template-columns:1fr 1fr}
+  .header-inner{height:60px}
+  .header-title{font-size:16px}
+}
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <div class="lbox">
+    <div class="mark">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M9 3h6l1 3h3a1 1 0 011 1v11a2 2 0 01-2 2H6a2 2 0 01-2-2V7a1 1 0 011-1h3l1-3z" stroke="#E8A317" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.5" stroke="#E8A317" stroke-width="1.8"/></svg>
+    </div>
+    <h2>快速試算</h2>
+    <p>此頁面僅限內部使用</p>
+    <input type="password" id="pw" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()">
+    <button onclick="login()">進入</button>
+    <div class="lerr" id="lerr">密碼錯誤，請再試一次</div>
+  </div>
+</div>
+
+<div id="app" style="display:none">
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="press-mark">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M9 3h6l1 3h3a1 1 0 011 1v11a2 2 0 01-2 2H6a2 2 0 01-2-2V7a1 1 0 011-1h3l1-3z" stroke="#E8A317" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.5" stroke="#E8A317" stroke-width="1.8"/></svg>
+      </div>
+      <div class="header-text">
+        <span class="header-title">快速試算</span>
+        <span class="header-sub">PRESS-CTRL // PRIVATE CALCULATOR</span>
+      </div>
+      <div class="header-right">
+        <span class="private-tag">內部限定</span>
+        <a href="/admin" class="nav-link">後台</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="intro">
+      <div class="intro-eyebrow">Internal Tool</div>
+      <h1>快速試算金額</h1>
+      <p>選項目、填數量頁數，立即算出金額，不會寫入正式訂單紀錄</p>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><span class="section-title">新增項目</span></div>
+      <div class="section-body">
+        <div class="grid4">
+          <div class="field">
+            <label>印刷類型</label>
+            <select id="newType"><option value="">請選擇印刷類型</option></select>
+          </div>
+          <div class="field">
+            <label>備註/檔名（選填）</label>
+            <input type="text" id="newName" placeholder="方便識別用">
+          </div>
+          <div class="field">
+            <label>數量</label>
+            <input type="number" id="newQty" min="1" placeholder="0">
+          </div>
+          <div class="field">
+            <label>頁數</label>
+            <input type="number" id="newPages" min="1" placeholder="0">
+          </div>
+        </div>
+        <button class="add-row-btn" onclick="addRow()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          加入試算清單
+        </button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><span class="section-title">試算清單</span></div>
+      <div class="section-body">
+        <div id="emptyHint" class="empty-hint">尚未加入任何項目</div>
+        <div class="calc-table-wrap" id="tableWrap" style="display:none">
+          <table class="calc">
+            <thead><tr><th>類型</th><th>備註</th><th>數量</th><th>頁數</th><th>張數/份</th><th>單價</th><th style="text-align:right">金額</th><th></th></tr></thead>
+            <tbody id="rowsBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="total-bar">
+      <div>
+        <div class="label">試算總金額</div>
+        <div class="sub" id="itemCount">共 0 筆項目</div>
+      </div>
+      <div class="amount" id="grandTotal">NT$ 0</div>
+    </div>
+
+    <button class="clear-btn" onclick="clearAll()">清空全部重新試算</button>
+  </main>
+
+  <footer><p>© GUSHUCUN · Print Order Terminal · Version 1.0.24</p></footer>
+</div>
+
+<script>
+async function login(){
+  const pw=document.getElementById('pw').value;
+  try{
+    const r=await fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})});
+    const d=await r.json();
+    if(d.ok){sessionStorage.setItem('calc_tok','1');go()}else document.getElementById('lerr').style.display='block';
+  }catch{document.getElementById('lerr').style.display='block'}
+}
+function go(){document.getElementById('gate').style.display='none';document.getElementById('app').style.display='block'}
+if(sessionStorage.getItem('calc_tok'))go();
+
+// ── 價目表（跟下單頁面完全一致）──
+const TYPES=[
+ {v:'膠裝A4（上字封面）',b:16,c:6.5},{v:'膠裝A4（牛皮紙封面）',b:16,c:6.5},
+ {v:'膠裝A4（自備無上字）',b:16,c:4.5},{v:'膠裝A4（許豪自備封面）',b:16,c:3.0},
+ {v:'膠裝A4（許錡加工封面）',b:16,c:4.5},{v:'騎馬釘A3（牛皮紙封面）',b:0,c:8.0},
+ {v:'騎馬釘A3（上字封面）',b:0,c:8.5},{v:'騎馬釘A3（無封面）',b:3,c:0},
+ {v:'騎馬釘A3（許錡自備封面）',b:0,c:8.5},{v:'騎馬釘B4（牛皮紙封面）',b:0,c:6.5},
+ {v:'騎馬釘B4（上字封面）',b:0,c:6.5},{v:'騎馬釘B4（自備封面）',b:0,c:6.5},{v:'騎馬釘B4（無封面）',b:6.5,c:0},
+ {v:'騎馬釘A4（牛皮紙封面）',b:0,c:5.0},{v:'騎馬釘A4（上字封面）',b:0,c:5.0},{v:'騎馬釘A4（無封面）',b:3,c:0},
+ {v:'A4左側兩釘（無封面）',b:3,c:0},{v:'A3左側兩釘（無封面）',b:3,c:0},{v:'B4左側兩釘（無封面）',b:3,c:0},
+ {v:'B5單張',b:0,c:0,f:2.5},{v:'A5單張（無封面）',b:0,c:0},
+ {v:'A4單面（無封面）',b:0,c:0},{v:'B4單面（無封面）',b:0,c:0},{v:'A3單面（無封面）',b:0,c:0},
+ {v:'A4雙面（無裝訂）',b:0,c:0},{v:'B4雙面（無裝訂）',b:0,c:0},{v:'A3雙面（無裝訂）',b:0,c:0},
+ {v:'彩色印刷A4單面',b:0,c:0,f:4},
+ {v:'彩色文宣DM-A4',b:0,c:0,f:4.5},{v:'彩色文宣DM-B4',b:0,c:0,f:6.5},
+ {v:'叫紙A4',b:0,c:0,f:90},{v:'叫紙B4',b:0,c:0,f:135},{v:'叫紙A3',b:0,c:0,f:175},
+ {v:'叫紙A5',b:0,c:0,f:75},{v:'叫紙B5',b:0,c:0,f:85},
+ {v:'頭條新聞A5（黑白）',b:0,c:0,f:0.8},{v:'頭條新聞A5（彩色）',b:0,c:0,f:1.5},
+ {v:'頭條新聞B5（黑白）',b:0,c:0,f:1.2},{v:'頭條新聞B5（彩色）',b:0,c:0,f:2.0},
+];
+const RATES={A4:[[50,1.8],[100,1.5],[300,1.3],[1000,1.1],[9e9,0.9]],A3:[[50,2.5],[100,2.3],[300,2.0],[1000,1.85],[9e9,1.65]],B4:[[50,2.2],[100,2.0],[300,1.8],[1000,1.65],[9e9,1.55]],B5:[[50,1.2],[100,1.0],[300,0.9],[1000,0.85],[9e9,0.8]],A5:[[50,1.0],[100,0.8],[9e9,0.75]]};
+function getSize(t){if(t.includes('A3'))return'A3';if(t.includes('B4'))return'B4';if(t.includes('B5'))return'B5';if(t.includes('A5'))return'A5';return'A4'}
+function getSheets(t,p){p=Math.ceil(+p||0);if(['B5單張','彩色','叫紙','頭條'].some(k=>t.includes(k)))return p;if(['騎馬釘A3','騎馬釘B4','騎馬釘A4'].some(k=>t.includes(k)))return Math.ceil(p/4);if(['A4單面','B4單面','A3單面'].some(k=>t.includes(k)))return p;return Math.ceil(p/2)}
+function getRate(s,n){for(const[l,r]of(RATES[s]||RATES.A4))if(n<=l)return r;return 0.9}
+function calcPrice(type,pages,qty){
+  pages=+pages||0;qty=+qty||0;
+  if(!type||pages<=0||qty<=0)return null;
+  const info=TYPES.find(x=>x.v===type);
+  if(!info)return null;
+  const sh=getSheets(type,pages);
+  if(info.f!==undefined)return{sheets:sh,rate:info.f,unit:info.f,total:Math.round(info.f*qty)};
+  const size=getSize(type),rate=getRate(size,sh*qty),paper=sh*rate,unit=Math.round((paper+info.b+info.c)*10)/10;
+  return{sheets:sh,rate,unit,total:Math.round(unit*qty)};
+}
+
+// 填入下拉選單
+const typeSelect = document.getElementById('newType');
+TYPES.forEach(t=>{
+  const opt = document.createElement('option');
+  opt.value = t.v; opt.textContent = t.v;
+  typeSelect.appendChild(opt);
+});
+
+// ── 試算清單管理 ──
+let rows = [];
+let rowIdCounter = 0;
+
+function addRow(){
+  const type = document.getElementById('newType').value;
+  const name = document.getElementById('newName').value.trim();
+  const qty = +document.getElementById('newQty').value || 0;
+  const pages = +document.getElementById('newPages').value || 0;
+
+  if(!type){ alert('請選擇印刷類型'); return; }
+  if(qty<=0){ alert('請填寫數量'); return; }
+  if(pages<=0){ alert('請填寫頁數'); return; }
+
+  const result = calcPrice(type, pages, qty);
+  rowIdCounter++;
+  rows.push({ id: rowIdCounter, type, name, qty, pages, result });
+
+  document.getElementById('newName').value='';
+  document.getElementById('newQty').value='';
+  document.getElementById('newPages').value='';
+  document.getElementById('newType').value='';
+  document.getElementById('newType').focus();
+
+  render();
+}
+
+function removeRow(id){
+  rows = rows.filter(r=>r.id!==id);
+  render();
+}
+
+function clearAll(){
+  if(rows.length && !confirm('確定要清空所有試算項目嗎？'))return;
+  rows = [];
+  render();
+}
+
+function render(){
+  const tbody = document.getElementById('rowsBody');
+  const emptyHint = document.getElementById('emptyHint');
+  const tableWrap = document.getElementById('tableWrap');
+
+  if(!rows.length){
+    emptyHint.style.display='block';
+    tableWrap.style.display='none';
+  }else{
+    emptyHint.style.display='none';
+    tableWrap.style.display='block';
+  }
+
+  tbody.innerHTML='';
+  let grand = 0;
+  rows.forEach(r=>{
+    const tr = document.createElement('tr');
+    const res = r.result;
+    grand += res ? res.total : 0;
+    tr.innerHTML = `
+      <td>${r.type}</td>
+      <td style="color:var(--ink2)">${r.name||'—'}</td>
+      <td>${r.qty}</td>
+      <td>${r.pages}</td>
+      <td>${res?res.sheets:'—'}</td>
+      <td>${res?'$'+res.unit:'—'}</td>
+      <td class="row-amount">${res?'$'+res.total.toLocaleString():'<span class=\"row-warn\">無法計算</span>'}</td>
+      <td><button class="row-del" onclick="removeRow(${r.id})">✕</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('itemCount').textContent = `共 ${rows.length} 筆項目`;
+  document.getElementById('grandTotal').textContent = `NT$ ${grand.toLocaleString()}`;
+}
+
+render();
+</script>
+</body>
+</html>
