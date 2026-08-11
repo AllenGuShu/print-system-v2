@@ -468,12 +468,14 @@ const TYPES=[
  {v:'騎馬釘B4（上字封面）',b:0,c:6.5},{v:'騎馬釘B4（自備封面）',b:0,c:6.5},{v:'騎馬釘B4（無封面）',b:6.5,c:0},
  {v:'騎馬釘A4（牛皮紙封面）',b:0,c:5.0},{v:'騎馬釘A4（上字封面）',b:0,c:5.0},{v:'騎馬釘A4（無封面）',b:3,c:0},
  {v:'A4左側兩釘（無封面）',b:3,c:0},{v:'A3左側兩釘（無封面）',b:3,c:0},{v:'B4左側兩釘（無封面）',b:3,c:0},
- {v:'B5單張/頭條/每週一翻',b:0,c:0,f:2.5},{v:'A5單張（無封面）',b:0,c:0},
+ {v:'B5單張',b:0,c:0,f:2.5},{v:'A5單張（無封面）',b:0,c:0},
  {v:'A4單面（無封面）',b:0,c:0},{v:'B4單面（無封面）',b:0,c:0},{v:'A3單面（無封面）',b:0,c:0},
  {v:'A4雙面（無裝訂）',b:0,c:0},{v:'B4雙面（無裝訂）',b:0,c:0},{v:'A3雙面（無裝訂）',b:0,c:0},
  {v:'彩色印刷A4單面',b:0,c:0,f:4},{v:'A5單面彩色頭條新聞',b:0,c:0,f:1.25},
  {v:'彩色文宣DM-A4',b:0,c:0,f:4.5},{v:'彩色文宣DM-B4',b:0,c:0,f:6.5},
- {v:'叫紙A4（每包$90）',b:0,c:0,f:90},{v:'叫紙B4（每包$135）',b:0,c:0,f:135},{v:'叫紙A3（每包$175）',b:0,c:0,f:175},
+ {v:'叫紙A4',b:0,c:0,f:90},{v:'叫紙B4',b:0,c:0,f:135},{v:'叫紙A3',b:0,c:0,f:175},
+ {v:'頭條新聞A5（黑白）',b:0,c:0,f:0.8},{v:'頭條新聞A5（彩色）',b:0,c:0,f:1.5},
+ {v:'頭條新聞B5（黑白）',b:0,c:0,f:1.2},{v:'頭條新聞B5（彩色）',b:0,c:0,f:2.0},
 ];
 
 let itemCounter=0;
@@ -483,8 +485,10 @@ const TYPE_OPTIONS=`
 <optgroup label="── 騎馬釘B4 ──"><option>騎馬釘B4（牛皮紙封面）</option><option>騎馬釘B4（上字封面）</option><option>騎馬釘B4（自備封面）</option><option>騎馬釘B4（無封面）</option></optgroup>
 <optgroup label="── 騎馬釘A4 ──"><option>騎馬釘A4（牛皮紙封面）</option><option>騎馬釘A4（上字封面）</option><option>騎馬釘A4（無封面）</option></optgroup>
 <optgroup label="── 左側兩釘 ──"><option>A4左側兩釘（無封面）</option><option>A3左側兩釘（無封面）</option><option>B4左側兩釘（無封面）</option></optgroup>
-<optgroup label="── 單張/雙面 ──"><option>B5單張/頭條/每週一翻</option><option>A5單張（無封面）</option><option>A4單面（無封面）</option><option>B4單面（無封面）</option><option>A3單面（無封面）</option><option>A4雙面（無裝訂）</option><option>B4雙面（無裝訂）</option><option>A3雙面（無裝訂）</option></optgroup>
-<optgroup label="── 彩色/DM/叫紙 ──"><option>彩色印刷A4單面</option><option>A5單面彩色頭條新聞</option><option>彩色文宣DM-A4</option><option>彩色文宣DM-B4</option><option>叫紙A4（每包$90）</option><option>叫紙B4（每包$135）</option><option>叫紙A3（每包$175）</option></optgroup>`;
+<optgroup label="── 單張/雙面 ──"><option>B5單張</option><option>A5單張（無封面）</option><option>A4單面（無封面）</option><option>B4單面（無封面）</option><option>A3單面（無封面）</option><option>A4雙面（無裝訂）</option><option>B4雙面（無裝訂）</option><option>A3雙面（無裝訂）</option></optgroup>
+<optgroup label="── 頭條新聞 ──"><option>頭條新聞A5（黑白）</option><option>頭條新聞A5（彩色）</option><option>頭條新聞B5（黑白）</option><option>頭條新聞B5（彩色）</option><option>A5單面彩色頭條新聞</option></optgroup>
+<optgroup label="── 叫紙 ──"><option>叫紙A4</option><option>叫紙B4</option><option>叫紙A3</option></optgroup>
+<optgroup label="── 彩色印刷/DM ──"><option>彩色印刷A4單面</option><option>彩色文宣DM-A4</option><option>彩色文宣DM-B4</option></optgroup>`;
 
 function addItem(){
   itemCounter++;const id=itemCounter;
@@ -680,7 +684,7 @@ function resolveTeacherSpecificType(type, teacher){
 }
 
 // 叫紙類型：改成「包數」計價，不需要總頁數欄位（自動視為1）
-const PAPER_ORDER_TYPES = ['叫紙A4（每包$90）', '叫紙B4（每包$135）', '叫紙A3（每包$175）'];
+const PAPER_ORDER_TYPES = ['叫紙A4', '叫紙B4', '叫紙A3'];
 
 function updateFieldLabels(id){
   const typeSel = document.getElementById('type-'+id);
